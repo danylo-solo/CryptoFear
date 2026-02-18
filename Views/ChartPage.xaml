@@ -1,0 +1,418 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:viewmodels="clr-namespace:CryptoFear.ViewModels"
+             xmlns:models="clr-namespace:CryptoFear.Models"
+             xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.Maui;assembly=LiveChartsCore.SkiaSharpView.Maui"
+             x:Class="CryptoFear.Views.ChartPage"
+             x:DataType="viewmodels:ChartViewModel"
+             Title="{Binding Title}"
+             Shell.NavBarIsVisible="False"
+             BackgroundColor="{StaticResource Background}">
+
+    <Grid RowDefinitions="*,Auto">
+        <ScrollView Grid.Row="0">
+            <VerticalStackLayout Padding="20,24" Spacing="24">
+
+                <!-- Header -->
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="Fear &amp; Greed Index"
+                           Style="{StaticResource DisplayLarge}"/>
+                    <Label Text="Crypto market sentiment over time"
+                           Style="{StaticResource BodyLarge}"
+                           TextColor="{StaticResource TextSecondary}"/>
+                </VerticalStackLayout>
+
+                <!-- Chart — no card, flows with page -->
+                <lvc:CartesianChart x:Name="ChartCard"
+                                        Series="{Binding Series}"
+                                        XAxes="{Binding XAxes}"
+                                        YAxes="{Binding YAxes}"
+                                        DrawMargin="{Binding DrawMargin}"
+                                        HeightRequest="400"
+                                        HorizontalOptions="Fill"
+                                        ZoomMode="X"
+                                        TooltipPosition="Top"
+                                        BackgroundColor="Transparent"/>
+
+                <!-- Chart range chips -->
+                <HorizontalStackLayout Spacing="8" HorizontalOptions="Start">
+                    <Button Text="7D" Style="{StaticResource ChipButton}"
+                            Command="{Binding SelectChartRangeCommand}" CommandParameter="7D">
+                        <Button.Triggers>
+                            <DataTrigger TargetType="Button" Binding="{Binding SelectedChartRange}" Value="7D">
+                                <Setter Property="BackgroundColor" Value="{StaticResource Primary}"/>
+                                <Setter Property="TextColor" Value="{StaticResource White}"/>
+                            </DataTrigger>
+                        </Button.Triggers>
+                    </Button>
+                    <Button Text="30D" Style="{StaticResource ChipButton}"
+                            Command="{Binding SelectChartRangeCommand}" CommandParameter="30D">
+                        <Button.Triggers>
+                            <DataTrigger TargetType="Button" Binding="{Binding SelectedChartRange}" Value="30D">
+                                <Setter Property="BackgroundColor" Value="{StaticResource Primary}"/>
+                                <Setter Property="TextColor" Value="{StaticResource White}"/>
+                            </DataTrigger>
+                        </Button.Triggers>
+                    </Button>
+                    <Button Text="90D" Style="{StaticResource ChipButton}"
+                            Command="{Binding SelectChartRangeCommand}" CommandParameter="90D">
+                        <Button.Triggers>
+                            <DataTrigger TargetType="Button" Binding="{Binding SelectedChartRange}" Value="90D">
+                                <Setter Property="BackgroundColor" Value="{StaticResource Primary}"/>
+                                <Setter Property="TextColor" Value="{StaticResource White}"/>
+                            </DataTrigger>
+                        </Button.Triggers>
+                    </Button>
+                    <Button Text="1Y" Style="{StaticResource ChipButton}"
+                            Command="{Binding SelectChartRangeCommand}" CommandParameter="1Y">
+                        <Button.Triggers>
+                            <DataTrigger TargetType="Button" Binding="{Binding SelectedChartRange}" Value="1Y">
+                                <Setter Property="BackgroundColor" Value="{StaticResource Primary}"/>
+                                <Setter Property="TextColor" Value="{StaticResource White}"/>
+                            </DataTrigger>
+                        </Button.Triggers>
+                    </Button>
+                </HorizontalStackLayout>
+
+                <!-- Historical Values (below chart) -->
+                <Border Style="{StaticResource ModernCard}"
+                        Padding="16,20"
+                        x:Name="StatsCard">
+                    <VerticalStackLayout Spacing="16">
+                        <Label Text="Historical Values"
+                               FontSize="15"
+                               FontAttributes="Bold"
+                               TextColor="{StaticResource TextPrimary}"/>
+
+                        <Grid ColumnDefinitions="*,*,*" ColumnSpacing="12">
+                            <!-- Yesterday -->
+                            <VerticalStackLayout Grid.Column="0" Spacing="6">
+                                <Label Text="Yesterday"
+                                       FontSize="12"
+                                       TextColor="{StaticResource TextSecondary}"/>
+                                <Label TextColor="{Binding YesterdayValue, Converter={StaticResource FearGreedToColorConverter}}">
+                                    <Label.FormattedText>
+                                        <FormattedString>
+                                            <Span Text="{Binding YesterdayValueWhole}"
+                                                  FontSize="24"
+                                                  FontFamily="InterBold"/>
+                                            <Span Text="{Binding YesterdayValueDecimal}"
+                                                  FontSize="16"
+                                                  FontFamily="InterBold"/>
+                                        </FormattedString>
+                                    </Label.FormattedText>
+                                </Label>
+                                <Label Text="{Binding YesterdayClassification}"
+                                       FontSize="11"
+                                       TextColor="{StaticResource TextMuted}"/>
+                            </VerticalStackLayout>
+
+                            <!-- Last Week -->
+                            <VerticalStackLayout Grid.Column="1" Spacing="6">
+                                <Label Text="Last Week"
+                                       FontSize="12"
+                                       TextColor="{StaticResource TextSecondary}"/>
+                                <Label TextColor="{Binding LastWeekValue, Converter={StaticResource FearGreedToColorConverter}}">
+                                    <Label.FormattedText>
+                                        <FormattedString>
+                                            <Span Text="{Binding LastWeekValueWhole}"
+                                                  FontSize="24"
+                                                  FontFamily="InterBold"/>
+                                            <Span Text="{Binding LastWeekValueDecimal}"
+                                                  FontSize="16"
+                                                  FontFamily="InterBold"/>
+                                        </FormattedString>
+                                    </Label.FormattedText>
+                                </Label>
+                                <Label Text="{Binding LastWeekClassification}"
+                                       FontSize="11"
+                                       TextColor="{StaticResource TextMuted}"/>
+                            </VerticalStackLayout>
+
+                            <!-- Last Month -->
+                            <VerticalStackLayout Grid.Column="2" Spacing="6">
+                                <Label Text="Last Month"
+                                       FontSize="12"
+                                       TextColor="{StaticResource TextSecondary}"/>
+                                <Label TextColor="{Binding LastMonthValue, Converter={StaticResource FearGreedToColorConverter}}">
+                                    <Label.FormattedText>
+                                        <FormattedString>
+                                            <Span Text="{Binding LastMonthValueWhole}"
+                                                  FontSize="24"
+                                                  FontFamily="InterBold"/>
+                                            <Span Text="{Binding LastMonthValueDecimal}"
+                                                  FontSize="16"
+                                                  FontFamily="InterBold"/>
+                                        </FormattedString>
+                                    </Label.FormattedText>
+                                </Label>
+                                <Label Text="{Binding LastMonthClassification}"
+                                       FontSize="11"
+                                       TextColor="{StaticResource TextMuted}"/>
+                            </VerticalStackLayout>
+                        </Grid>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Entry Form -->
+                <VerticalStackLayout Spacing="16">
+                    <Label Text="Log Your Position"
+                           Style="{StaticResource SectionHeader}"/>
+
+                    <Border Style="{StaticResource ModernCard}"
+                            StrokeShape="RoundRectangle 0">
+                        <VerticalStackLayout Spacing="0">
+
+                            <!-- Balance -->
+                            <Label Text="Total Crypto Balance (USD)"
+                                   Style="{StaticResource TitleMedium}"
+                                   Margin="0,0,0,8"/>
+                            <Border Style="{StaticResource CardStyle}"
+                                    Padding="0"
+                                    BackgroundColor="{StaticResource SurfaceElevated}">
+                                <Entry Text="{Binding BalanceText}"
+                                       Placeholder="e.g. 5000"
+                                       Keyboard="Numeric"
+                                       FontSize="16"
+                                       BackgroundColor="Transparent"/>
+                            </Border>
+                            <Label Text="{Binding BalanceError}"
+                                   FontSize="12"
+                                   TextColor="{StaticResource Danger}"
+                                   Margin="4,4,0,0"
+                                   IsVisible="{Binding BalanceError, Converter={StaticResource InverseBoolConverter}}"/>
+
+                            <!-- Intention -->
+                            <Label Text="Intention"
+                                   Style="{StaticResource TitleMedium}"
+                                   Margin="0,20,0,8"/>
+                            <Border Style="{StaticResource CardStyle}"
+                                    Padding="16,14"
+                                    BackgroundColor="{StaticResource SurfaceElevated}"
+                                    x:Name="IntentionSelector">
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnIntentionSelectorTapped"/>
+                                </Border.GestureRecognizers>
+                                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                                    <Border BackgroundColor="{Binding SelectedIntention, Converter={StaticResource IntentionToColorConverter}}"
+                                            StrokeThickness="0"
+                                            StrokeShape="RoundRectangle 0"
+                                            WidthRequest="12"
+                                            HeightRequest="12"
+                                            VerticalOptions="Center"/>
+                                    <Label Text="{Binding SelectedIntention}"
+                                           Grid.Column="1"
+                                           FontSize="16"
+                                           TextColor="{StaticResource TextPrimary}"
+                                           VerticalOptions="Center"/>
+                                    <Label Text="›"
+                                           Grid.Column="2"
+                                           FontSize="20"
+                                           TextColor="{StaticResource TextMuted}"
+                                           VerticalOptions="Center"/>
+                                </Grid>
+                            </Border>
+
+                            <!-- Date -->
+                            <Label Text="Date"
+                                   Style="{StaticResource TitleMedium}"
+                                   Margin="0,20,0,8"/>
+                            <Border Style="{StaticResource CardStyle}"
+                                    Padding="16,14"
+                                    BackgroundColor="{StaticResource SurfaceElevated}">
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding ToggleDatePickerCommand}"/>
+                                </Border.GestureRecognizers>
+                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                                    <Label Text="{Binding EntryDate, StringFormat='{0:MMM dd, yyyy}'}"
+                                           Grid.Column="0"
+                                           FontSize="16"
+                                           FontFamily="InterRegular"
+                                           TextColor="{StaticResource TextPrimary}"
+                                           VerticalOptions="Center"/>
+                                    <Label Text="›"
+                                           Grid.Column="1"
+                                           FontSize="20"
+                                           TextColor="{StaticResource TextMuted}"
+                                           VerticalOptions="Center"/>
+                                </Grid>
+                            </Border>
+                            <Border Style="{StaticResource CardStyle}"
+                                    Padding="12,8"
+                                    BackgroundColor="{StaticResource SurfaceElevated}"
+                                    IsVisible="{Binding IsDatePickerExpanded}"
+                                    Margin="0,4,0,0">
+                                <DatePicker Date="{Binding EntryDate}"
+                                            FontSize="16"
+                                            TextColor="{StaticResource TextPrimary}"
+                                            BackgroundColor="Transparent"
+                                            MinimumHeightRequest="44"/>
+                            </Border>
+
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <!-- Save Button -->
+                    <Button Command="{Binding SaveEntryCommand}"
+                            IsEnabled="{Binding IsNotBusy}"
+                            HeightRequest="56"
+                            CornerRadius="0"
+                            FontSize="17"
+                            FontAttributes="Bold"
+                            x:Name="SaveButton">
+                        <Button.Triggers>
+                            <DataTrigger TargetType="Button"
+                                         Binding="{Binding IsBusy}"
+                                         Value="False">
+                                <Setter Property="Text" Value="Save Entry"/>
+                            </DataTrigger>
+                            <DataTrigger TargetType="Button"
+                                         Binding="{Binding IsBusy}"
+                                         Value="True">
+                                <Setter Property="Text" Value="Saving..."/>
+                            </DataTrigger>
+                        </Button.Triggers>
+                    </Button>
+                </VerticalStackLayout>
+
+                <!-- Entry Browser -->
+                <VerticalStackLayout Spacing="16">
+                    <Label Text="Your Entries"
+                           Style="{StaticResource SectionHeader}"/>
+
+                    <!-- Entry list -->
+                    <VerticalStackLayout BindableLayout.ItemsSource="{Binding AllEntries}"
+                                         Spacing="12"
+                                         IsVisible="{Binding HasEntries}">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="models:UserEntry">
+                                <SwipeView>
+                                    <SwipeView.RightItems>
+                                        <SwipeItems>
+                                            <SwipeItem Text="Delete"
+                                                       BackgroundColor="{StaticResource Danger}"
+                                                       Invoked="OnDeleteSwipeItemInvoked"/>
+                                        </SwipeItems>
+                                    </SwipeView.RightItems>
+
+                                    <Border Style="{StaticResource ModernCard}">
+                                        <Border.GestureRecognizers>
+                                            <TapGestureRecognizer Tapped="OnEntryTapped"/>
+                                        </Border.GestureRecognizers>
+                                        <VerticalStackLayout Spacing="4">
+                                            <Label Text="{Binding EntryDate, StringFormat='{0:MMM dd, yyyy}'}"
+                                                   FontSize="16"
+                                                   FontAttributes="Bold"
+                                                   TextColor="{StaticResource TextPrimary}"/>
+                                            <Label Text="{Binding Balance, Converter={StaticResource BalanceFormatConverter}}"
+                                                   FontSize="14"
+                                                   TextColor="{StaticResource TextSecondary}"/>
+                                            <Border BackgroundColor="{Binding Intention, Converter={StaticResource IntentionToColorConverter}}"
+                                                    StrokeThickness="0"
+                                                    StrokeShape="RoundRectangle 6"
+                                                    Padding="8,4"
+                                                    HorizontalOptions="Start">
+                                                <Label Text="{Binding Intention}"
+                                                       FontSize="11"
+                                                       TextColor="White"
+                                                       FontAttributes="Bold"/>
+                                            </Border>
+                                        </VerticalStackLayout>
+                                    </Border>
+                                </SwipeView>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
+
+                    <!-- Empty state -->
+                    <Border Style="{StaticResource ModernCard}"
+                            Padding="32,40"
+                            IsVisible="{Binding HasEntries, Converter={StaticResource InverseBoolConverter}}">
+                        <VerticalStackLayout Spacing="12" HorizontalOptions="Center">
+                            <Label Text="No entries yet"
+                                   Style="{StaticResource TitleMedium}"
+                                   HorizontalOptions="Center"/>
+                            <Label Text="Log your first position using the form above to start tracking your decisions."
+                                   FontSize="15"
+                                   FontFamily="InterRegular"
+                                   TextColor="{StaticResource TextSecondary}"
+                                   HorizontalOptions="Center"
+                                   HorizontalTextAlignment="Center"
+                                   LineBreakMode="WordWrap"/>
+                        </VerticalStackLayout>
+                    </Border>
+                </VerticalStackLayout>
+
+                <BoxView HeightRequest="20" Color="Transparent"/>
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <!-- Selected Entry Detail Card (bottom overlay) -->
+        <Border Grid.Row="1"
+                Style="{StaticResource ElevatedCard}"
+                Padding="20"
+                IsVisible="{Binding HasSelectedEntry}"
+                BackgroundColor="{StaticResource SurfaceElevated}"
+                x:Name="DetailCard">
+            <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto" RowSpacing="8" ColumnSpacing="12">
+                <Label Text="{Binding SelectedEntry.EntryDate, StringFormat='{0:MMMM dd, yyyy}'}"
+                       FontSize="18"
+                       FontAttributes="Bold"
+                       TextColor="{StaticResource TextPrimary}"
+                       Grid.Row="0" Grid.Column="0"/>
+
+                <Border Grid.Row="0" Grid.Column="1"
+                        StrokeThickness="0"
+                        StrokeShape="RoundRectangle 12"
+                        Padding="4"
+                        BackgroundColor="{StaticResource Surface}"
+                        WidthRequest="32" HeightRequest="32">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding DismissDetailCommand}"/>
+                    </Border.GestureRecognizers>
+                    <Label Text="✕"
+                           FontSize="14"
+                           TextColor="{StaticResource TextSecondary}"
+                           HorizontalOptions="Center"
+                           VerticalOptions="Center"/>
+                </Border>
+
+                <Label Text="{Binding SelectedEntry.Balance, Converter={StaticResource BalanceFormatConverter}}"
+                       FontSize="16"
+                       TextColor="{StaticResource TextSecondary}"
+                       Grid.Row="1" Grid.Column="0"/>
+
+                <HorizontalStackLayout Grid.Row="2" Grid.Column="0" Spacing="10">
+                    <Border BackgroundColor="{Binding SelectedEntry.Intention, Converter={StaticResource IntentionToColorConverter}}"
+                            StrokeThickness="0"
+                            StrokeShape="RoundRectangle 6"
+                            Padding="10,5">
+                        <Label Text="{Binding SelectedEntry.Intention}"
+                               FontSize="12"
+                               TextColor="White"
+                               FontAttributes="Bold"/>
+                    </Border>
+                    <Label TextColor="{StaticResource TextMuted}"
+                           VerticalOptions="Center">
+                        <Label.FormattedText>
+                            <FormattedString>
+                                <Span Text="Fear &amp; Greed: "
+                                      FontSize="13"
+                                      FontFamily="InterRegular"/>
+                                <Span Text="{Binding SelectedEntry.FearGreedValueWhole}"
+                                      FontSize="13"
+                                      FontFamily="InterBold"/>
+                                <Span Text="{Binding SelectedEntry.FearGreedValueDecimal}"
+                                      FontSize="10"
+                                      FontFamily="InterBold"/>
+                            </FormattedString>
+                        </Label.FormattedText>
+                    </Label>
+                </HorizontalStackLayout>
+            </Grid>
+        </Border>
+
+    </Grid>
+</ContentPage>

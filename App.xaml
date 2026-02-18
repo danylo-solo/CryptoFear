@@ -1,0 +1,22 @@
+<?xml version = "1.0" encoding = "UTF-8" ?>
+<Application xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:local="clr-namespace:CryptoFear"
+             xmlns:converters="clr-namespace:CryptoFear.Converters"
+             x:Class="CryptoFear.App">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Resources/Styles/Colors.xaml" />
+                <ResourceDictionary Source="Resources/Styles/Styles.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <converters:InverseBoolConverter x:Key="InverseBoolConverter"/>
+            <converters:PercentageToColorConverter x:Key="PercentageToColorConverter"/>
+            <converters:FearGreedToColorConverter x:Key="FearGreedToColorConverter"/>
+            <converters:FearGreedToClassificationConverter x:Key="FearGreedToClassificationConverter"/>
+            <converters:IntentionToColorConverter x:Key="IntentionToColorConverter"/>
+            <converters:BalanceFormatConverter x:Key="BalanceFormatConverter"/>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

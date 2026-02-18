@@ -1,0 +1,435 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:viewmodels="clr-namespace:CryptoFear.ViewModels"
+             xmlns:controls="clr-namespace:CryptoFear.Controls"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             x:Class="CryptoFear.Views.HomePage"
+             x:DataType="viewmodels:HomeViewModel"
+             Title="{Binding Title}"
+             Shell.NavBarIsVisible="False"
+             BackgroundColor="{StaticResource Background}">
+
+    <Grid RowDefinitions="*">
+    <ScrollView Grid.Row="0">
+        <VerticalStackLayout Spacing="0">
+
+            <!-- Hero Section with Gauge -->
+            <Border BackgroundColor="{StaticResource Background}"
+                    StrokeThickness="0"
+                    StrokeShape="RoundRectangle 0,0,24,24"
+                    Padding="24,48,24,28"
+                    Margin="0,0,0,0">
+                <VerticalStackLayout Spacing="8">
+                    <!-- Header -->
+                    <HorizontalStackLayout Spacing="8" HorizontalOptions="Center">
+                        <Label Text="CryptoFear"
+                               Style="{StaticResource DisplayLarge}"
+                               TextColor="{StaticResource PrimaryLight}"
+                               HorizontalOptions="Center"/>
+                    </HorizontalStackLayout>
+
+                    <Label Text="Market Sentiment Tracker"
+                           FontSize="14"
+                           FontFamily="InterRegular"
+                           TextColor="{StaticResource TextSecondary}"
+                           HorizontalOptions="Center"
+                           Margin="0,0,0,8"/>
+
+                    <!-- Fear & Greed Gauge -->
+                    <controls:FearGreedGauge x:Name="GaugeControl"
+                                            Value="{Binding CurrentIndex}"
+                                            Classification="{Binding CurrentClassification}"
+                                            HeightRequest="260"
+                                            HorizontalOptions="Fill"/>
+
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Main Content -->
+            <VerticalStackLayout Padding="20,24" Spacing="24">
+
+                <!-- Index Change Card with Timeframe Chips -->
+                <Border Style="{StaticResource ModernCard}"
+                        x:Name="ChangeCard">
+                    <VerticalStackLayout Spacing="16">
+                        <Label Text="Index Change"
+                               Style="{StaticResource SectionHeader}"/>
+
+                        <!-- Change value display -->
+                        <HorizontalStackLayout Spacing="8" HorizontalOptions="Center">
+                            <Label TextColor="{Binding IndexChange, Converter={StaticResource PercentageToColorConverter}}"
+                                   VerticalOptions="Center">
+                                <Label.FormattedText>
+                                    <FormattedString>
+                                        <Span Text="{Binding IndexChangeWhole}"
+                                              FontSize="36"
+                                              FontFamily="InterBold"/>
+                                        <Span Text="{Binding IndexChangeDecimal}"
+                                              FontSize="24"
+                                              FontFamily="InterBold"/>
+                                    </FormattedString>
+                                </Label.FormattedText>
+                            </Label>
+                            <Label Text="pts"
+                                   FontSize="16"
+                                   FontFamily="InterRegular"
+                                   TextColor="{StaticResource TextSecondary}"
+                                   VerticalOptions="End"
+                                   Margin="0,0,0,6"/>
+                        </HorizontalStackLayout>
+
+                        <!-- Timeframe selector chips -->
+                        <HorizontalStackLayout Spacing="8" HorizontalOptions="Center">
+                            <Button Text="1H"
+                                    Style="{StaticResource ChipButton}"
+                                    Command="{Binding SelectTimeframeCommand}"
+                                    CommandParameter="1H"
+                                    x:Name="Chip1H"/>
+                            <Button Text="24H"
+                                    Style="{StaticResource ChipButtonSelected}"
+                                    Command="{Binding SelectTimeframeCommand}"
+                                    CommandParameter="24H"
+                                    x:Name="Chip24H"/>
+                            <Button Text="7D"
+                                    Style="{StaticResource ChipButton}"
+                                    Command="{Binding SelectTimeframeCommand}"
+                                    CommandParameter="7D"
+                                    x:Name="Chip7D"/>
+                            <Button Text="30D"
+                                    Style="{StaticResource ChipButton}"
+                                    Command="{Binding SelectTimeframeCommand}"
+                                    CommandParameter="30D"
+                                    x:Name="Chip30D"/>
+                        </HorizontalStackLayout>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Market Stats Row -->
+                <VerticalStackLayout Spacing="16">
+                    <Label Text="Sentiment Snapshot"
+                           Style="{StaticResource SectionHeader}"/>
+
+                    <Grid ColumnDefinitions="*,*,*" ColumnSpacing="12">
+                        <!-- Today -->
+                        <Border Style="{StaticResource StatCard}"
+                                Grid.Column="0"
+                                x:Name="StatCard1">
+                            <VerticalStackLayout HorizontalOptions="Center" Spacing="6">
+                                <Label TextColor="{Binding CurrentIndex, Converter={StaticResource FearGreedToColorConverter}}"
+                                       HorizontalOptions="Center"
+                                       HorizontalTextAlignment="Center"
+                                       LineBreakMode="NoWrap"
+                                       MaxLines="1"
+                                       x:Name="TodayLabel">
+                                    <Label.FormattedText>
+                                        <FormattedString>
+                                            <Span Text="{Binding CurrentIndexWhole}"
+                                                  FontSize="32"
+                                                  FontFamily="InterBold"/>
+                                            <Span Text="{Binding CurrentIndexDecimal}"
+                                                  FontSize="20"
+                                                  FontFamily="InterBold"/>
+                                        </FormattedString>
+                                    </Label.FormattedText>
+                                </Label>
+                                <Label Text="Today"
+                                       Style="{StaticResource LabelSmall}"
+                                       HorizontalOptions="Center"/>
+                            </VerticalStackLayout>
+                        </Border>
+
+                        <!-- Yesterday -->
+                        <Border Style="{StaticResource StatCard}"
+                                Grid.Column="1"
+                                x:Name="StatCard2">
+                            <VerticalStackLayout HorizontalOptions="Center" Spacing="6">
+                                <Label TextColor="{Binding YesterdayIndex, Converter={StaticResource FearGreedToColorConverter}}"
+                                       HorizontalOptions="Center"
+                                       HorizontalTextAlignment="Center"
+                                       LineBreakMode="NoWrap"
+                                       MaxLines="1"
+                                       x:Name="YesterdayLabel">
+                                    <Label.FormattedText>
+                                        <FormattedString>
+                                            <Span Text="{Binding YesterdayIndexWhole}"
+                                                  FontSize="32"
+                                                  FontFamily="InterBold"/>
+                                            <Span Text="{Binding YesterdayIndexDecimal}"
+                                                  FontSize="20"
+                                                  FontFamily="InterBold"/>
+                                        </FormattedString>
+                                    </Label.FormattedText>
+                                </Label>
+                                <Label Text="Yesterday"
+                                       Style="{StaticResource LabelSmall}"
+                                       HorizontalOptions="Center"/>
+                            </VerticalStackLayout>
+                        </Border>
+
+                        <!-- Last Week -->
+                        <Border Style="{StaticResource StatCard}"
+                                Grid.Column="2"
+                                x:Name="StatCard3">
+                            <VerticalStackLayout HorizontalOptions="Center" Spacing="6">
+                                <Label TextColor="{Binding WeekAgoIndex, Converter={StaticResource FearGreedToColorConverter}}"
+                                       HorizontalOptions="Center"
+                                       HorizontalTextAlignment="Center"
+                                       LineBreakMode="NoWrap"
+                                       MaxLines="1"
+                                       x:Name="WeekLabel">
+                                    <Label.FormattedText>
+                                        <FormattedString>
+                                            <Span Text="{Binding WeekAgoIndexWhole}"
+                                                  FontSize="32"
+                                                  FontFamily="InterBold"/>
+                                            <Span Text="{Binding WeekAgoIndexDecimal}"
+                                                  FontSize="20"
+                                                  FontFamily="InterBold"/>
+                                        </FormattedString>
+                                    </Label.FormattedText>
+                                </Label>
+                                <Label Text="7 Days"
+                                       Style="{StaticResource LabelSmall}"
+                                       HorizontalOptions="Center"/>
+                            </VerticalStackLayout>
+                        </Border>
+                    </Grid>
+
+                    <!-- Yearly High and Low -->
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="12" Margin="0,4,0,0">
+                        <Border Grid.Column="0"
+                                Style="{StaticResource StatCard}"
+                                Padding="12,14"
+                                x:Name="YearlyHighCard">
+                            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                                <Border BackgroundColor="{StaticResource GreedExtreme}"
+                                        StrokeThickness="0"
+                                        StrokeShape="RoundRectangle 8"
+                                        WidthRequest="40" HeightRequest="40"
+                                        VerticalOptions="Center">
+                                    <Label TextColor="White"
+                                           HorizontalOptions="Center"
+                                           VerticalOptions="Center">
+                                        <Label.FormattedText>
+                                            <FormattedString>
+                                                <Span Text="{Binding YearlyHighWhole}"
+                                                      FontSize="14"
+                                                      FontFamily="InterBold"/>
+                                                <Span Text="{Binding YearlyHighDecimal}"
+                                                      FontSize="10"
+                                                      FontFamily="InterBold"/>
+                                            </FormattedString>
+                                        </Label.FormattedText>
+                                    </Label>
+                                </Border>
+                                <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
+                                    <Label Text="Yearly High"
+                                           FontSize="12"
+                                           FontAttributes="Bold"
+                                           TextColor="{StaticResource TextPrimary}"/>
+                                    <Label Text="{Binding YearlyHighDate}"
+                                           FontSize="11"
+                                           TextColor="{StaticResource TextMuted}"/>
+                                </VerticalStackLayout>
+                            </Grid>
+                        </Border>
+                        <Border Grid.Column="1"
+                                Style="{StaticResource StatCard}"
+                                Padding="12,14"
+                                x:Name="YearlyLowCard">
+                            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                                <Border BackgroundColor="{StaticResource FearExtreme}"
+                                        StrokeThickness="0"
+                                        StrokeShape="RoundRectangle 8"
+                                        WidthRequest="40" HeightRequest="40"
+                                        VerticalOptions="Center">
+                                    <Label TextColor="White"
+                                           HorizontalOptions="Center"
+                                           VerticalOptions="Center">
+                                        <Label.FormattedText>
+                                            <FormattedString>
+                                                <Span Text="{Binding YearlyLowWhole}"
+                                                      FontSize="14"
+                                                      FontFamily="InterBold"/>
+                                                <Span Text="{Binding YearlyLowDecimal}"
+                                                      FontSize="10"
+                                                      FontFamily="InterBold"/>
+                                            </FormattedString>
+                                        </Label.FormattedText>
+                                    </Label>
+                                </Border>
+                                <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
+                                    <Label Text="Yearly Low"
+                                           FontSize="12"
+                                           FontAttributes="Bold"
+                                           TextColor="{StaticResource TextPrimary}"/>
+                                    <Label Text="{Binding YearlyLowDate}"
+                                           FontSize="11"
+                                           TextColor="{StaticResource TextMuted}"/>
+                                </VerticalStackLayout>
+                            </Grid>
+                        </Border>
+                    </Grid>
+                </VerticalStackLayout>
+
+                <!-- Expandable explanation cards -->
+                <Border Style="{StaticResource ModernCard}"
+                        x:Name="InfoCard">
+                    <toolkit:Expander IsExpanded="False">
+                        <toolkit:Expander.Header>
+                            <Grid ColumnDefinitions="*,Auto">
+                                <Label Text="What does this mean?"
+                                       Style="{StaticResource TitleMedium}"
+                                       VerticalOptions="Center"/>
+                                <Label Grid.Column="1"
+                                       Text="▼"
+                                       FontSize="14"
+                                       TextColor="{StaticResource TextMuted}"
+                                       VerticalOptions="Center"/>
+                            </Grid>
+                        </toolkit:Expander.Header>
+                        <VerticalStackLayout Spacing="12" Margin="0,12,0,0">
+                            <Label FontSize="14"
+                                   FontFamily="InterRegular"
+                                   TextColor="{StaticResource TextSecondary}"
+                                   LineBreakMode="WordWrap"
+                                   LineHeight="1.5">
+                                <Label.Text>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.</Label.Text>
+                            </Label>
+
+                            <Label FontSize="13"
+                                   FontFamily="InterRegular"
+                                   TextColor="{StaticResource TextMuted}"
+                                   LineBreakMode="WordWrap"
+                                   LineHeight="1.5">
+                                <Label.Text>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident.</Label.Text>
+                            </Label>
+                        </VerticalStackLayout>
+                    </toolkit:Expander>
+                </Border>
+
+                <Border Style="{StaticResource ModernCard}">
+                    <toolkit:Expander IsExpanded="False">
+                        <toolkit:Expander.Header>
+                            <Grid ColumnDefinitions="*,Auto">
+                                <Label Text="How are scores calculated?"
+                                       Style="{StaticResource TitleMedium}"
+                                       VerticalOptions="Center"/>
+                                <Label Grid.Column="1"
+                                       Text="▼"
+                                       FontSize="14"
+                                       TextColor="{StaticResource TextMuted}"
+                                       VerticalOptions="Center"/>
+                            </Grid>
+                        </toolkit:Expander.Header>
+                        <VerticalStackLayout Spacing="10" Margin="0,12,0,0">
+                            <Label Text="Lorem ipsum dolor sit amet, consectetur adipiscing elit:"
+                                   FontSize="14"
+                                   FontFamily="InterRegular"
+                                   TextColor="{StaticResource TextSecondary}"/>
+                            <Label Text="• Lorem ipsum dolor sit amet, consectetur adipiscing elit."
+                                   FontSize="13"
+                                   TextColor="{StaticResource TextSecondary}"/>
+                            <Label Text="• Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+                                   FontSize="13"
+                                   TextColor="{StaticResource TextSecondary}"/>
+                            <Label Text="• Ut enim ad minim veniam, quis nostrud exercitation ullamco."
+                                   FontSize="13"
+                                   TextColor="{StaticResource TextSecondary}"/>
+                            <Label Text="• Duis aute irure dolor in reprehenderit in voluptate velit esse."
+                                   FontSize="13"
+                                   TextColor="{StaticResource TextSecondary}"/>
+                            <Label Text="Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
+                                   FontSize="12"
+                                   TextColor="{StaticResource TextMuted}"
+                                   LineBreakMode="WordWrap"/>
+                        </VerticalStackLayout>
+                    </toolkit:Expander>
+                </Border>
+
+                <!-- Quick Actions -->
+                <VerticalStackLayout Spacing="16">
+                    <Label Text="Quick Actions"
+                           Style="{StaticResource SectionHeader}"/>
+
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                        <Border Style="{StaticResource InteractiveCard}"
+                                Grid.Column="0"
+                                x:Name="LogActionCard">
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnLogEntryTapped"/>
+                            </Border.GestureRecognizers>
+                            <VerticalStackLayout Spacing="14" HorizontalOptions="Center">
+                                <Border BackgroundColor="{StaticResource PrimaryContainer}"
+                                        StrokeThickness="0"
+                                        StrokeShape="RoundRectangle 14"
+                                        WidthRequest="52"
+                                        HeightRequest="52"
+                                        HorizontalOptions="Center">
+                                    <Label Text="+"
+                                           FontSize="28"
+                                           TextColor="{StaticResource Primary}"
+                                           HorizontalOptions="Center"
+                                           VerticalOptions="Center"/>
+                                </Border>
+                                <Label Text="Log Entry"
+                                       FontSize="15"
+                                       FontAttributes="Bold"
+                                       TextColor="{StaticResource TextPrimary}"
+                                       HorizontalOptions="Center"/>
+                                <Label Text="Record your position"
+                                       FontSize="13"
+                                       TextColor="{StaticResource TextSecondary}"
+                                       HorizontalOptions="Center"
+                                       HorizontalTextAlignment="Center"/>
+                            </VerticalStackLayout>
+                        </Border>
+
+                        <Border Style="{StaticResource InteractiveCard}"
+                                Grid.Column="1"
+                                x:Name="WatchActionCard">
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnWatchWalletTapped"/>
+                            </Border.GestureRecognizers>
+                            <VerticalStackLayout Spacing="14" HorizontalOptions="Center">
+                                <Border BackgroundColor="{StaticResource PrimaryContainer}"
+                                        StrokeThickness="0"
+                                        StrokeShape="RoundRectangle 14"
+                                        WidthRequest="52"
+                                        HeightRequest="52"
+                                        HorizontalOptions="Center">
+                                    <Image Source="view.png"
+                                           WidthRequest="26"
+                                           HeightRequest="26"
+                                           HorizontalOptions="Center"
+                                           VerticalOptions="Center"/>
+                                </Border>
+                                <Label Text="Watch Wallet"
+                                       FontSize="15"
+                                       FontAttributes="Bold"
+                                       TextColor="{StaticResource TextPrimary}"
+                                       HorizontalOptions="Center"/>
+                                <Label Text="Track a wallet address"
+                                       FontSize="13"
+                                       TextColor="{StaticResource TextSecondary}"
+                                       HorizontalOptions="Center"
+                                       HorizontalTextAlignment="Center"/>
+                            </VerticalStackLayout>
+                        </Border>
+                    </Grid>
+                </VerticalStackLayout>
+
+                <!-- Loading Indicator -->
+                <ActivityIndicator IsRunning="{Binding IsBusy}"
+                                   IsVisible="{Binding IsBusy}"
+                                   HorizontalOptions="Center"
+                                   Color="{StaticResource Primary}"/>
+
+                <BoxView HeightRequest="20" Color="Transparent"/>
+
+            </VerticalStackLayout>
+        </VerticalStackLayout>
+    </ScrollView>
+    </Grid>
+</ContentPage>

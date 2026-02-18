@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:viewmodels="clr-namespace:CryptoFear.ViewModels"
+             xmlns:models="clr-namespace:CryptoFear.Models"
+             x:Class="CryptoFear.Views.WatchPage"
+             x:DataType="viewmodels:WatchViewModel"
+             Title="{Binding Title}"
+             Shell.NavBarIsVisible="False"
+             BackgroundColor="{StaticResource Background}">
+
+    <Grid RowDefinitions="*">
+    <RefreshView Grid.Row="0" IsRefreshing="{Binding IsRefreshing}"
+                 Command="{Binding RefreshBalancesCommand}"
+                 RefreshColor="{StaticResource Primary}">
+        <ScrollView>
+            <VerticalStackLayout Padding="20,24" Spacing="24">
+
+                <!-- Header -->
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="Wallet Watch"
+                           Style="{StaticResource DisplayLarge}"/>
+                    <Label Text="Track Ethereum wallet balances"
+                           Style="{StaticResource BodyLarge}"
+                           TextColor="{StaticResource TextSecondary}"/>
+                </VerticalStackLayout>
+
+                <!-- Add Wallet Form -->
+                <Border Style="{StaticResource ModernCard}"
+                        StrokeShape="RoundRectangle 0"
+                        x:Name="FormCard">
+                    <VerticalStackLayout Spacing="16">
+                        <Label Text="Add Wallet"
+                               Style="{StaticResource TitleMedium}"/>
+
+                        <!-- Address -->
+                        <Border Style="{StaticResource CardStyle}"
+                                Padding="0"
+                                BackgroundColor="{StaticResource SurfaceElevated}">
+                            <Entry Text="{Binding AddressInput}"
+                                   Placeholder="0x..."
+                                   FontSize="14"
+                                   FontFamily="InterRegular"
+                                   BackgroundColor="Transparent"/>
+                        </Border>
+                        <Label Text="{Binding AddressError}"
+                               FontSize="12"
+                               TextColor="{StaticResource Danger}"
+                               Margin="4,-8,0,0"
+                               IsVisible="{Binding AddressError, Converter={StaticResource InverseBoolConverter}}"/>
+
+                        <!-- Label -->
+                        <Border Style="{StaticResource CardStyle}"
+                                Padding="0"
+                                BackgroundColor="{StaticResource SurfaceElevated}">
+                            <Entry Text="{Binding LabelInput}"
+                                   Placeholder="Label (optional)"
+                                   FontSize="15"
+                                   BackgroundColor="Transparent"/>
+                        </Border>
+
+                        <Button Text="Add Wallet"
+                                Command="{Binding AddWalletCommand}"
+                                IsEnabled="{Binding IsNotBusy}"
+                                HeightRequest="50"
+                                CornerRadius="0"
+                                FontSize="15"
+                                FontAttributes="Bold"/>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Timeframe Chips -->
+                <ScrollView Orientation="Horizontal" HorizontalScrollBarVisibility="Never" Margin="-20,0">
+                    <HorizontalStackLayout Spacing="8" Padding="20,0">
+                        <Button Text="1H"
+                                Style="{StaticResource ChipButton}"
+                                Command="{Binding SelectTimeframeCommand}"
+                                CommandParameter="1H"
+                                x:Name="Chip1H"/>
+                        <Button Text="24H"
+                                Style="{StaticResource ChipButtonSelected}"
+                                Command="{Binding SelectTimeframeCommand}"
+                                CommandParameter="24H"
+                                x:Name="Chip24H"/>
+                        <Button Text="7D"
+                                Style="{StaticResource ChipButton}"
+                                Command="{Binding SelectTimeframeCommand}"
+                                CommandParameter="7D"
+                                x:Name="Chip7D"/>
+                        <Button Text="30D"
+                                Style="{StaticResource ChipButton}"
+                                Command="{Binding SelectTimeframeCommand}"
+                                CommandParameter="30D"
+                                x:Name="Chip30D"/>
+                        <Button Text="1Y"
+                                Style="{StaticResource ChipButton}"
+                                Command="{Binding SelectTimeframeCommand}"
+                                CommandParameter="1Y"
+                                x:Name="Chip1Y"/>
+                    </HorizontalStackLayout>
+                </ScrollView>
+
+                <!-- Wallet List -->
+                <VerticalStackLayout Spacing="16">
+                    <Label Text="Watched Wallets"
+                           Style="{StaticResource SectionHeader}"/>
+
+                    <CollectionView ItemsSource="{Binding Wallets}"
+                                    x:Name="WalletList">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="models:WatchedWallet">
+                                <SwipeView>
+                                    <SwipeView.RightItems>
+                                        <SwipeItems>
+                                            <SwipeItem Text="Remove"
+                                                       BackgroundColor="{StaticResource Danger}"
+                                                       Invoked="OnDeleteSwipeItemInvoked"/>
+                                        </SwipeItems>
+                                    </SwipeView.RightItems>
+
+                                    <Border Style="{StaticResource ModernCard}"
+                                            Margin="0,0,0,12">
+                                        <Grid RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="*,Auto"
+                                              RowSpacing="6" ColumnSpacing="12">
+                                            <!-- Label -->
+                                            <Label Text="{Binding Label}"
+                                                   FontSize="17"
+                                                   FontAttributes="Bold"
+                                                   TextColor="{StaticResource TextPrimary}"
+                                                   Grid.Row="0" Grid.Column="0"/>
+
+                                            <!-- Change Badge -->
+                                            <Border BackgroundColor="{Binding Change24h, Converter={StaticResource PercentageToColorConverter}}"
+                                                    StrokeThickness="0"
+                                                    StrokeShape="RoundRectangle 8"
+                                                    Padding="10,5"
+                                                    Grid.Row="0" Grid.Column="1"
+                                                    VerticalOptions="Start">
+                                                <Label Text="{Binding Change24h, StringFormat='{0:+0.00;-0.00}%'}"
+                                                       FontSize="12"
+                                                       TextColor="White"
+                                                       FontAttributes="Bold"/>
+                                            </Border>
+
+                                            <!-- Address -->
+                                            <Label Text="{Binding Address}"
+                                                   FontSize="12"
+                                                   FontFamily="InterRegular"
+                                                   TextColor="{StaticResource TextMuted}"
+                                                   LineBreakMode="MiddleTruncation"
+                                                   Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"/>
+
+                                            <!-- Balances -->
+                                            <HorizontalStackLayout Grid.Row="2" Grid.Column="0"
+                                                                    Grid.ColumnSpan="2" Spacing="16">
+                                                <Label Text="{Binding BalanceEth, StringFormat='{0:F4} ETH'}"
+                                                       FontSize="14"
+                                                       FontFamily="InterMedium"
+                                                       TextColor="{StaticResource TextPrimary}"/>
+                                                <Label Text="{Binding BalanceUsd, Converter={StaticResource BalanceFormatConverter}}"
+                                                       FontSize="14"
+                                                       TextColor="{StaticResource TextSecondary}"/>
+                                            </HorizontalStackLayout>
+                                        </Grid>
+                                    </Border>
+                                </SwipeView>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+
+                        <CollectionView.EmptyView>
+                            <Border Style="{StaticResource ModernCard}"
+                                    Padding="32,40"
+                                    Margin="0,0,0,12">
+                                <VerticalStackLayout Spacing="12" HorizontalOptions="Center">
+                                    <Label Text="No wallets tracked"
+                                           Style="{StaticResource TitleMedium}"
+                                           HorizontalOptions="Center"/>
+                                    <Label Text="Add an Ethereum wallet address above to start tracking its balance."
+                                           FontSize="15"
+                                           FontFamily="InterRegular"
+                                           TextColor="{StaticResource TextSecondary}"
+                                           HorizontalOptions="Center"
+                                           HorizontalTextAlignment="Center"
+                                           LineBreakMode="WordWrap"/>
+                                </VerticalStackLayout>
+                            </Border>
+                        </CollectionView.EmptyView>
+                    </CollectionView>
+                </VerticalStackLayout>
+
+                <!-- Loading -->
+                <ActivityIndicator IsRunning="{Binding IsBusy}"
+                                   IsVisible="{Binding IsBusy}"
+                                   HorizontalOptions="Center"
+                                   Color="{StaticResource Primary}"/>
+
+                <BoxView HeightRequest="20" Color="Transparent"/>
+
+            </VerticalStackLayout>
+        </ScrollView>
+    </RefreshView>
+    </Grid>
+</ContentPage>

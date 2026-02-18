@@ -1,0 +1,39 @@
+# Build output
+bin/
+obj/
+out/
+TestResults/
+
+# .NET / Visual Studio user files
+*.user
+*.suo
+*.userosscache
+*.rsuser
+*.cache
+*.pdb
+
+# Rider / VS Code / Cursor / local IDE state
+.vs/
+.idea/
+.vscode/
+
+# NuGet / package caches (project-local)
+packages/
+*.nupkg
+
+# MAUI / app runtime local data
+*.db
+*.db3
+*.sqlite
+
+# Environment / secrets
+.env
+.env.*
+
+# Local scripts (machine-specific workflow)
+run.bat
+build.bat
+
+# Local debug artifacts
+*.log
+sentiment-debug.log
