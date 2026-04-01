@@ -1,7 +1,7 @@
 using CryptoFear.Helpers;
+using CryptoFear.Services;
 using CryptoFear.ViewModels;
-using LiveChartsCore.SkiaSharpView.Painting;
-using SkiaSharp;
+using LiveChartsCore.Kernel;
 
 namespace CryptoFear.Views;
 
@@ -15,9 +15,7 @@ public partial class ChartPage : ContentPage
         BindingContext = viewModel;
         _viewModel = viewModel;
 
-        // Match tooltip colours to the app's dark theme
-        ChartCard.TooltipBackgroundPaint = new SolidColorPaint(new SKColor(0x1C, 0x1C, 0x36, 245));
-        ChartCard.TooltipTextPaint = new SolidColorPaint(new SKColor(0xE8, 0xE6, 0xF0));
+        ChartCard.DataPointerDown += OnChartDataPointerDown;
     }
 
     protected override async void OnAppearing()
@@ -34,6 +32,23 @@ public partial class ChartPage : ContentPage
         base.OnDisappearing();
     }
 
+    private void OnChartDataPointerDown(
+        LiveChartsCore.Kernel.Sketches.IChartView chart,
+        IEnumerable<ChartPoint> points)
+    {
+        var entryPoint = points.FirstOrDefault(p => p.Context.DataSource is Models.UserEntry);
+
+        if (entryPoint?.Context.DataSource is Models.UserEntry entry)
+        {
+            ViewAnimations.PerformHapticFeedback();
+            _viewModel.ShowMarkerTooltip(entry);
+        }
+        else
+        {
+            _viewModel.DismissMarkerTooltipCommand.Execute(null);
+        }
+    }
+
     private async void OnIntentionSelectorTapped(object? sender, TappedEventArgs e)
     {
         var result = await DisplayActionSheet(
@@ -48,38 +63,21 @@ public partial class ChartPage : ContentPage
         }
     }
 
-    private void OnEntryTapped(object? sender, TappedEventArgs e)
+    private async void OnDeleteEntryClicked(object? sender, EventArgs e)
     {
-        if (sender is not Border border) return;
-        if (border.BindingContext is not Models.UserEntry entry) return;
+        if (sender is not ImageButton button) return;
+        if (button.BindingContext is not Models.UserEntry entry) return;
 
-        ViewAnimations.PerformHapticFeedback();
-        _viewModel.SelectEntryCommand.Execute(entry);
-    }
+        var confirmed = await DisplayAlert(
+            "Delete Entry",
+            $"Are you sure you want to permanently delete the entry from {entry.EntryDate:MMM dd, yyyy}?",
+            "Delete",
+            "Cancel");
 
-    private void OnDeleteSwipeItemInvoked(object? sender, EventArgs e)
-    {
-        ViewAnimations.PerformHapticFeedback(HapticFeedbackType.LongPress);
-
-        if (sender is SwipeItem swipeItem)
+        if (confirmed)
         {
-            var parent = swipeItem.Parent;
-            SwipeView? swipeView = null;
-
-            while (parent != null)
-            {
-                if (parent is SwipeView sv)
-                {
-                    swipeView = sv;
-                    break;
-                }
-                parent = parent.Parent;
-            }
-
-            if (swipeView?.BindingContext is Models.UserEntry entry)
-            {
-                _viewModel.DeleteEntryCommand.Execute(entry);
-            }
+            ViewAnimations.PerformHapticFeedback(HapticFeedbackType.LongPress);
+            _viewModel.DeleteEntryCommand.Execute(entry);
         }
     }
 }

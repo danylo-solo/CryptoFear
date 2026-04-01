@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:viewmodels="clr-namespace:CryptoFear.ViewModels"
+             xmlns:models="clr-namespace:CryptoFear.Models"
+             x:Class="CryptoFear.Views.NewsPage"
+             x:DataType="viewmodels:NewsViewModel"
+             Title="{Binding Title}"
+             Shell.NavBarIsVisible="False"
+             BackgroundColor="{DynamicResource Background}">
+
+    <Grid RowDefinitions="*">
+    <RefreshView Grid.Row="0" IsRefreshing="{Binding IsRefreshing}"
+                 Command="{Binding RefreshArticlesCommand}"
+                 RefreshColor="{DynamicResource Primary}">
+        <ScrollView>
+            <VerticalStackLayout Padding="20,24" Spacing="24">
+
+                <!-- Header -->
+                <Label Text="Recent Stories"
+                       Style="{StaticResource DisplayLarge}"
+                       Padding="0,16,0,0"/>
+
+                <!-- Articles List -->
+                <CollectionView ItemsSource="{Binding Articles}"
+                                x:Name="ArticleList">
+                    <CollectionView.ItemsLayout>
+                        <LinearItemsLayout Orientation="Vertical" ItemSpacing="16"/>
+                    </CollectionView.ItemsLayout>
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate x:DataType="models:NewsArticle">
+                            <Border Style="{StaticResource ModernCard}">
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer
+                                        Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodels:NewsViewModel}}, Path=OpenArticleCommand}"
+                                        CommandParameter="{Binding .}"/>
+                                </Border.GestureRecognizers>
+
+                                <VerticalStackLayout Spacing="12">
+                                    <!-- Source + Time Row -->
+                                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
+                                        <Border BackgroundColor="{DynamicResource PrimaryContainer}"
+                                                StrokeThickness="0"
+                                                StrokeShape="RoundRectangle 8"
+                                                Padding="10,5"
+                                                Grid.Column="0">
+                                            <Label Text="{Binding Source}"
+                                                   FontSize="11"
+                                                   FontFamily="InterSemiBold"
+                                                   TextColor="{DynamicResource PrimaryLight}"/>
+                                        </Border>
+
+                                        <Label Text="{Binding PublishedDate, Converter={StaticResource DateToTimeAgoConverter}}"
+                                               FontSize="12"
+                                               FontFamily="InterRegular"
+                                               TextColor="{DynamicResource TextMuted}"
+                                               VerticalOptions="Center"
+                                               Grid.Column="2"/>
+                                    </Grid>
+
+                                    <!-- Title -->
+                                    <Label Text="{Binding Title}"
+                                           FontSize="16"
+                                           FontFamily="InterSemiBold"
+                                           TextColor="{DynamicResource TextPrimary}"
+                                           LineBreakMode="WordWrap"
+                                           MaxLines="3"/>
+
+                                    <!-- Summary -->
+                                    <Label Text="{Binding Summary}"
+                                           FontSize="13"
+                                           FontFamily="InterRegular"
+                                           TextColor="{DynamicResource TextSecondary}"
+                                           LineBreakMode="WordWrap"
+                                           MaxLines="3"
+                                           LineHeight="1.4"/>
+
+                                    <!-- Date + Read More -->
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <Label Text="{Binding PublishedDate, StringFormat='{0:MMM dd, yyyy}'}"
+                                               FontSize="12"
+                                               FontFamily="InterRegular"
+                                               TextColor="{DynamicResource TextMuted}"
+                                               VerticalOptions="Center"
+                                               Grid.Column="0"/>
+                                        <Label Text="Read more →"
+                                               FontSize="13"
+                                               FontFamily="InterSemiBold"
+                                               TextColor="{DynamicResource PrimaryLight}"
+                                               VerticalOptions="Center"
+                                               Grid.Column="1"/>
+                                    </Grid>
+                                </VerticalStackLayout>
+                            </Border>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+
+                </CollectionView>
+
+                <!-- Page Selector -->
+                <Grid ColumnDefinitions="Auto,*,Auto"
+                      IsVisible="{Binding IsNotBusy}">
+                    <Button Text="← Prev"
+                            Style="{StaticResource ChipButton}"
+                            Command="{Binding PreviousPageCommand}"
+                            IsEnabled="{Binding CanGoBack}"
+                            Grid.Column="0"/>
+                    <Label HorizontalOptions="Center"
+                           VerticalOptions="Center"
+                           FontSize="14"
+                           FontFamily="InterMedium"
+                           TextColor="{DynamicResource TextSecondary}"
+                           Grid.Column="1">
+                        <Label.FormattedText>
+                            <FormattedString>
+                                <Span Text="{Binding CurrentPage}"
+                                      FontFamily="InterBold"
+                                      TextColor="{DynamicResource TextPrimary}"/>
+                                <Span Text=" / "/>
+                                <Span Text="{Binding TotalPages}"/>
+                            </FormattedString>
+                        </Label.FormattedText>
+                    </Label>
+                    <Button Text="Next →"
+                            Style="{StaticResource ChipButton}"
+                            Command="{Binding NextPageCommand}"
+                            IsEnabled="{Binding CanGoForward}"
+                            Grid.Column="2"/>
+                </Grid>
+
+                <!-- Loading -->
+                <ActivityIndicator IsRunning="{Binding IsBusy}"
+                                   IsVisible="{Binding IsBusy}"
+                                   HorizontalOptions="Center"
+                                   Color="{DynamicResource Primary}"/>
+
+                <BoxView HeightRequest="20" Color="Transparent"/>
+
+            </VerticalStackLayout>
+        </ScrollView>
+    </RefreshView>
+    </Grid>
+</ContentPage>

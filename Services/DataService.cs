@@ -31,6 +31,7 @@ public class DataService : IDataService
             await db.CreateTableAsync<UserEntry>();
             await db.CreateTableAsync<WatchedWallet>();
             await db.CreateTableAsync<ComputedSentimentPoint>();
+            await db.CreateTableAsync<NewsArticle>();
         }
         catch (Exception ex)
         {
@@ -170,6 +171,62 @@ public class DataService : IDataService
         {
             Debug.WriteLine($"Error saving sentiment points: {ex.Message}");
             throw;
+        }
+    }
+
+    public async Task<List<NewsArticle>> GetCachedArticlesAsync(int limit = 50)
+    {
+        try
+        {
+            var db = await GetDatabaseAsync();
+            return await db.Table<NewsArticle>()
+                .OrderByDescending(a => a.PublishedDate)
+                .Take(limit)
+                .ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Error getting cached articles: {ex.Message}");
+            return new List<NewsArticle>();
+        }
+    }
+
+    public async Task SaveArticlesAsync(IEnumerable<NewsArticle> articles)
+    {
+        try
+        {
+            var db = await GetDatabaseAsync();
+            foreach (var article in articles)
+            {
+                var existing = await db.Table<NewsArticle>()
+                    .Where(a => a.Url == article.Url)
+                    .FirstOrDefaultAsync();
+
+                if (existing == null)
+                {
+                    article.CachedAt = DateTime.UtcNow;
+                    await db.InsertAsync(article);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Error saving articles: {ex.Message}");
+        }
+    }
+
+    public async Task PurgeOldArticlesAsync(int keepDays = 7)
+    {
+        try
+        {
+            var db = await GetDatabaseAsync();
+            var cutoff = DateTime.UtcNow.AddDays(-keepDays);
+            await db.ExecuteAsync(
+                "DELETE FROM NewsArticle WHERE CachedAt < ?", cutoff);
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Error purging old articles: {ex.Message}");
         }
     }
 }

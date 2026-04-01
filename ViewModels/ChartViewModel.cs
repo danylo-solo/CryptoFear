@@ -38,18 +38,11 @@ public partial class ChartViewModel : BaseViewModel
     private string selectedIntention = "Hold";
 
     [ObservableProperty]
-    private DateTime entryDate = DateTime.Today;
-
-    [ObservableProperty]
     private string balanceError = string.Empty;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasEntries))]
     private List<UserEntry> allEntries = new();
-
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasSelectedEntry))]
-    private UserEntry? selectedEntry;
 
     // CMC-style summary stats
     [ObservableProperty]
@@ -71,14 +64,24 @@ public partial class ChartViewModel : BaseViewModel
     private string lastMonthClassification = "";
 
     [ObservableProperty]
-    private string selectedChartRange = "1Y";
+    private string selectedChartRange = "90D";
 
     [ObservableProperty]
-    private bool isDatePickerExpanded;
+    private string balanceFieldLabel = $"Total Crypto Balance ({CurrencyService.Current.Code})";
+
+    [ObservableProperty]
+    private bool isMarkerTooltipVisible;
+
+    [ObservableProperty]
+    private string tooltipDate = "";
+
+    [ObservableProperty]
+    private string tooltipIntention = "";
+
+    [ObservableProperty]
+    private string tooltipBalance = "";
 
     public bool HasEntries => AllEntries?.Count > 0;
-    public bool HasSelectedEntry => SelectedEntry != null;
-
     public List<string> Intentions { get; } = new() { "Hold", "Sell" };
 
     public event EventHandler? SaveSucceeded;
@@ -88,6 +91,11 @@ public partial class ChartViewModel : BaseViewModel
         _fearGreedService = fearGreedService;
         _dataService = dataService;
         Title = "Chart";
+
+        CurrencyService.CurrencyChanged += () =>
+        {
+            BalanceFieldLabel = $"Total Crypto Balance ({CurrencyService.Current.Code})";
+        };
     }
 
     public string YesterdayValueWhole => GetWholePart(YesterdayValue);
@@ -97,14 +105,7 @@ public partial class ChartViewModel : BaseViewModel
     public string LastMonthValueWhole => GetWholePart(LastMonthValue);
     public string LastMonthValueDecimal => GetDecimalPart(LastMonthValue);
 
-    private static int GetDaysForRange(string range) => range switch
-    {
-        "7D" => 7,
-        "30D" => 30,
-        "90D" => 90,
-        "1Y" => 365,
-        _ => 365
-    };
+    private const int FetchDays = 365;
 
     [RelayCommand]
     private async Task LoadDataAsync()
@@ -115,9 +116,7 @@ public partial class ChartViewModel : BaseViewModel
         {
             IsBusy = true;
 
-            var days = GetDaysForRange(SelectedChartRange);
-
-            var historicalTask = _fearGreedService.GetHistoricalAsync(days);
+            var historicalTask = _fearGreedService.GetHistoricalAsync(FetchDays);
             var entriesTask = _dataService.GetAllEntriesAsync();
 
             await Task.WhenAll(historicalTask, entriesTask);
@@ -164,42 +163,38 @@ public partial class ChartViewModel : BaseViewModel
 
         var seriesList = new List<ISeries>();
 
-        // X bounds are always driven by the historical data range — never by entries
-        var minDate = ordered.First().Timestamp;
-        var maxDate = ordered.Last().Timestamp;
+        var dataMinDate = ordered.First().Timestamp;
+        var dataMaxDate = ordered.Last().Timestamp;
 
-        // Only render markers that fall within the currently displayed date range
-        var rangeStart = minDate.Date;
-        var rangeEnd = maxDate.Date;
         var visibleEntries = entries
-            .Where(e => e.EntryDate.Date >= rangeStart && e.EntryDate.Date <= rangeEnd)
+            .Where(e => e.EntryDate.Date >= dataMinDate.Date && e.EntryDate.Date <= dataMaxDate.Date)
             .ToList();
 
-        var rangeTicks = (maxDate - minDate).Ticks;
-        if (rangeTicks <= 0) rangeTicks = TimeSpan.FromDays(1).Ticks;
-        var paddingTicks = (long)(rangeTicks * 0.02);
-        var xMin = (double)(minDate.Ticks - paddingTicks);
-        var xMax = (double)(maxDate.Ticks + paddingTicks);
+        var fullRangeTicks = (dataMaxDate - dataMinDate).Ticks;
+        if (fullRangeTicks <= 0) fullRangeTicks = TimeSpan.FromDays(1).Ticks;
+        var paddingTicks = (long)(fullRangeTicks * 0.02);
 
-        // main chart line
         var lineValues = ordered
             .Select(h => new DateTimePoint(h.Timestamp, h.Value))
             .ToList();
+
+        var chartAnimationSpeed = TimeSpan.FromMilliseconds(350);
 
         const int primaryR = 0x8B, primaryG = 0x7E, primaryB = 0xC8;
         seriesList.Add(new LineSeries<DateTimePoint>
         {
             Values = lineValues,
             GeometrySize = 0,
-            Stroke = new SolidColorPaint(new SKColor(0xD0, 0xCE, 0xE0), 2.2f),
+            Stroke = new SolidColorPaint(
+                ThemeService.IsDarkMode ? new SKColor(0xD0, 0xCE, 0xE0) : new SKColor(0x7B, 0x6D, 0xB8), 2.2f),
             Fill = new SolidColorPaint(new SKColor((byte)primaryR, (byte)primaryG, (byte)primaryB, 28)),
-            LineSmoothness = 0.4
+            LineSmoothness = 0.4,
+            AnimationsSpeed = chartAnimationSpeed,
+            EasingFunction = EasingFunctions.CubicOut
         });
 
-        // Build a date → value lookup from historical data so dots snap to the line
         var historicalLookup = ordered.ToDictionary(h => h.Timestamp.Date, h => h.Value);
 
-        // Resolve the historical Y-value for any entry date
         double ResolveY(DateTime date)
         {
             var utcDate = new DateTime(date.Year, date.Month, date.Day, 0, 0, 0, DateTimeKind.Utc);
@@ -207,38 +202,31 @@ public partial class ChartViewModel : BaseViewModel
             return ordered.MinBy(h => Math.Abs((h.Timestamp.Date - utcDate.Date).TotalDays))?.Value ?? 0;
         }
 
-        // user entries as dots — only those within the active date range
-        var entryHistoricalValues = visibleEntries.Select(e => ResolveY(e.EntryDate)).ToList();
-        if (visibleEntries.Count > 0)
+        var sortedEntries = visibleEntries.OrderBy(e => e.EntryDate).ToList();
+        var entryHistoricalValues = sortedEntries.Select(e => ResolveY(e.EntryDate)).ToList();
+        if (sortedEntries.Count > 0)
         {
-            seriesList.Add(new ScatterSeries<UserEntry>
+            seriesList.Add(new LineSeries<UserEntry>
             {
-                Values = visibleEntries,
-                // Coordinate(x, y) — x = SecondaryValue (date ticks), y = PrimaryValue (F&G value)
+                Values = sortedEntries,
                 Mapping = (e, index) =>
                 {
                     var utcDate = new DateTime(e.EntryDate.Year, e.EntryDate.Month, e.EntryDate.Day, 0, 0, 0, DateTimeKind.Utc);
                     return new Coordinate(utcDate.Ticks, ResolveY(e.EntryDate));
                 },
-                XToolTipLabelFormatter = point =>
-                    new DateTime((long)point.SecondaryValue, DateTimeKind.Utc).ToString("MMM d, yyyy"),
-                YToolTipLabelFormatter = point =>
-                {
-                    var entry = point.Context.DataSource as UserEntry;
-                    var fgValue = (int)Math.Round(point.PrimaryValue);
-                    var sentiment = SentimentClassifier.Classify(point.PrimaryValue);
-                    if (entry is null) return $"F&G: {fgValue} ({sentiment})";
-                    return $"{entry.Intention}  ·  ${entry.Balance:N2}  ·  F&G: {fgValue} ({sentiment})";
-                },
+                Stroke = new SolidColorPaint(SKColors.Transparent, 0),
+                Fill = null,
+                LineSmoothness = 0,
                 GeometrySize = 10,
-                Stroke = new SolidColorPaint(new SKColor((byte)primaryR, (byte)primaryG, (byte)primaryB), 1.5f),
-                Fill = new SolidColorPaint(new SKColor((byte)primaryR, (byte)primaryG, (byte)primaryB, 200))
+                GeometryFill = new SolidColorPaint(new SKColor((byte)primaryR, (byte)primaryG, (byte)primaryB, 200)),
+                GeometryStroke = new SolidColorPaint(new SKColor((byte)primaryR, (byte)primaryG, (byte)primaryB), 1.5f),
+                AnimationsSpeed = chartAnimationSpeed,
+                EasingFunction = EasingFunctions.CubicOut
             });
         }
 
         Series = seriesList.ToArray();
 
-        // y axis padding — use corrected historical values for entries
         var dataValues = ordered.Select(h => h.Value).ToList();
         dataValues.AddRange(entryHistoricalValues);
         var dataMin = dataValues.Min();
@@ -246,7 +234,7 @@ public partial class ChartViewModel : BaseViewModel
         var yRange = dataMax - dataMin;
         if (yRange <= 0) yRange = 10;
         var yPaddingBelow = yRange * 0.05;
-        var yPaddingAbove = yRange * 0.12; // extra room above highest
+        var yPaddingAbove = yRange * 0.12;
         var yMin = Math.Max(0, dataMin - yPaddingBelow);
         var yMax = Math.Min(100, dataMax + yPaddingAbove);
 
@@ -254,11 +242,13 @@ public partial class ChartViewModel : BaseViewModel
         {
             new DateTimeAxis(TimeSpan.FromDays(1), date => date.ToString("MMM d, yyyy"))
             {
-                MinLimit = xMin,
-                MaxLimit = xMax,
+                MinLimit = (double)(dataMinDate.Ticks - paddingTicks),
+                MaxLimit = (double)(dataMaxDate.Ticks + paddingTicks),
                 LabelsRotation = 0,
-                LabelsPaint = new SolidColorPaint(new SKColor(0x6B, 0x69, 0x80)),
-                SeparatorsPaint = new SolidColorPaint(new SKColor(0x22, 0x22, 0x38, 80)),
+                LabelsPaint = new SolidColorPaint(
+                    ThemeService.IsDarkMode ? new SKColor(0x6B, 0x69, 0x80) : new SKColor(0x7A, 0x78, 0x90)),
+                SeparatorsPaint = new SolidColorPaint(
+                    ThemeService.IsDarkMode ? new SKColor(0x22, 0x22, 0x38, 80) : new SKColor(0xD8, 0xD6, 0xE5, 120)),
                 TextSize = 10
             }
         };
@@ -269,8 +259,10 @@ public partial class ChartViewModel : BaseViewModel
             {
                 MinLimit = yMin,
                 MaxLimit = yMax,
-                LabelsPaint = new SolidColorPaint(new SKColor(0x6B, 0x69, 0x80)),
-                SeparatorsPaint = new SolidColorPaint(new SKColor(0x22, 0x22, 0x38, 80)),
+                LabelsPaint = new SolidColorPaint(
+                    ThemeService.IsDarkMode ? new SKColor(0x6B, 0x69, 0x80) : new SKColor(0x7A, 0x78, 0x90)),
+                SeparatorsPaint = new SolidColorPaint(
+                    ThemeService.IsDarkMode ? new SKColor(0x22, 0x22, 0x38, 80) : new SKColor(0xD8, 0xD6, 0xE5, 120)),
                 TextSize = 10
             }
         };
@@ -291,8 +283,7 @@ public partial class ChartViewModel : BaseViewModel
         {
             IsBusy = true;
 
-            // Normalize to UTC midnight to align with historical data timestamps
-            var entryDateUtc = new DateTime(EntryDate.Year, EntryDate.Month, EntryDate.Day, 0, 0, 0, DateTimeKind.Utc);
+            var entryDateUtc = DateTime.UtcNow.Date;
 
             // Look up the Fear & Greed value for the selected date from cached historical data
             double fearGreedValue = 0;
@@ -321,7 +312,6 @@ public partial class ChartViewModel : BaseViewModel
 
             BalanceText = string.Empty;
             SelectedIntention = "Hold";
-            EntryDate = DateTime.Today;
 
             await LoadDataAsync();
         }
@@ -350,29 +340,24 @@ public partial class ChartViewModel : BaseViewModel
     }
 
     [RelayCommand]
-    private void SelectEntry(UserEntry entry)
-    {
-        SelectedEntry = entry;
-    }
-
-    [RelayCommand]
-    private void DismissDetail()
-    {
-        SelectedEntry = null;
-    }
-
-    [RelayCommand]
-    private void ToggleDatePicker()
-    {
-        IsDatePickerExpanded = !IsDatePickerExpanded;
-    }
-
-    [RelayCommand]
-    private async Task SelectChartRangeAsync(string range)
+    private void SelectChartRange(string range)
     {
         if (string.IsNullOrEmpty(range) || SelectedChartRange == range) return;
         SelectedChartRange = range;
-        await LoadDataAsync();
+    }
+
+    public void ShowMarkerTooltip(UserEntry entry)
+    {
+        TooltipDate = entry.EntryDate.ToString("MMM dd, yyyy");
+        TooltipIntention = entry.Intention;
+        TooltipBalance = $"{CurrencyService.Current.Symbol}{entry.Balance:N2}";
+        IsMarkerTooltipVisible = true;
+    }
+
+    [RelayCommand]
+    private void DismissMarkerTooltip()
+    {
+        IsMarkerTooltipVisible = false;
     }
 
     public async Task OnAppearingAsync()

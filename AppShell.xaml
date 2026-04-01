@@ -6,7 +6,7 @@
     xmlns:views="clr-namespace:CryptoFear.Views"
     Title="CryptoFear"
     Shell.NavBarIsVisible="False"
-    Shell.BackgroundColor="{StaticResource Background}"
+    Shell.BackgroundColor="{DynamicResource Background}"
     FlyoutBehavior="Disabled">
 
     <TabBar>
@@ -27,6 +27,18 @@
             Icon="view.png"
             ContentTemplate="{DataTemplate views:WatchPage}"
             Route="watch" />
+
+        <ShellContent
+            Title=""
+            Icon="news.png"
+            ContentTemplate="{DataTemplate views:NewsPage}"
+            Route="news" />
+
+        <ShellContent
+            Title=""
+            Icon="settings.png"
+            ContentTemplate="{DataTemplate views:SettingsPage}"
+            Route="settings" />
     </TabBar>
 
 </Shell>

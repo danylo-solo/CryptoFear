@@ -9,6 +9,19 @@ namespace CryptoFear.ViewModels;
 public partial class HomeViewModel : BaseViewModel
 {
     private readonly IFearGreedService _fearGreedService;
+    private readonly INewsService _newsService;
+
+    private List<NewsArticle> _recentHeadlines = new();
+    private int _headlineIndex;
+
+    [ObservableProperty]
+    private string currentHeadlineTitle = "Recent News";
+
+    [ObservableProperty]
+    private string currentHeadlineSource = "See what's moving the market";
+
+    [ObservableProperty]
+    private bool hasHeadlines;
 
     [ObservableProperty]
     private double currentIndex;
@@ -54,9 +67,10 @@ public partial class HomeViewModel : BaseViewModel
 
     private List<FearGreedEntry> _historicalData = new();
 
-    public HomeViewModel(IFearGreedService fearGreedService)
+    public HomeViewModel(IFearGreedService fearGreedService, INewsService newsService)
     {
         _fearGreedService = fearGreedService;
+        _newsService = newsService;
         Title = "Home";
     }
 
@@ -173,6 +187,37 @@ public partial class HomeViewModel : BaseViewModel
     public async Task OnAppearingAsync()
     {
         await LoadDataAsync();
+        await LoadHeadlinesAsync();
+    }
+
+    private async Task LoadHeadlinesAsync()
+    {
+        try
+        {
+            var articles = await _newsService.GetArticlesAsync();
+            _recentHeadlines = articles.Take(3).ToList();
+            _headlineIndex = 0;
+            HasHeadlines = _recentHeadlines.Count > 0;
+
+            if (HasHeadlines)
+            {
+                CurrentHeadlineTitle = _recentHeadlines[0].Title;
+                CurrentHeadlineSource = _recentHeadlines[0].Source;
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error loading headlines: {ex.Message}");
+        }
+    }
+
+    public void AdvanceHeadline()
+    {
+        if (_recentHeadlines.Count == 0) return;
+
+        _headlineIndex = (_headlineIndex + 1) % _recentHeadlines.Count;
+        CurrentHeadlineTitle = _recentHeadlines[_headlineIndex].Title;
+        CurrentHeadlineSource = _recentHeadlines[_headlineIndex].Source;
     }
 
     partial void OnCurrentIndexChanged(double value)

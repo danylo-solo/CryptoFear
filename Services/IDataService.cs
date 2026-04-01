@@ -22,4 +22,9 @@ public interface IDataService
     Task<List<ComputedSentimentPoint>> GetSentimentPointsAsync(int days);
     Task<ComputedSentimentPoint?> GetLatestSentimentPointAsync();
     Task SaveSentimentPointsAsync(IEnumerable<ComputedSentimentPoint> points);
+
+    // NewsArticle cache
+    Task<List<NewsArticle>> GetCachedArticlesAsync(int limit = 50);
+    Task SaveArticlesAsync(IEnumerable<NewsArticle> articles);
+    Task PurgeOldArticlesAsync(int keepDays = 7);
 }

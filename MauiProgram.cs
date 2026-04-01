@@ -17,6 +17,23 @@ public static class MauiProgram
             .UseSkiaSharp()
             .UseMauiCommunityToolkit()
             .UseMauiCommunityToolkitMediaElement()
+            .ConfigureMauiHandlers(handlers =>
+            {
+#if WINDOWS
+                Microsoft.Maui.Handlers.SwitchHandler.Mapper.AppendToMapping("CompactToggle", (handler, view) =>
+                {
+                    if (handler.PlatformView is Microsoft.UI.Xaml.Controls.ToggleSwitch toggle)
+                    {
+                        toggle.OnContent = null;
+                        toggle.OffContent = null;
+                        toggle.MinWidth = 0;
+                        toggle.Padding = new Microsoft.UI.Xaml.Thickness(0);
+                        toggle.Width = 50;
+                        toggle.HorizontalAlignment = Microsoft.UI.Xaml.HorizontalAlignment.Right;
+                    }
+                });
+#endif
+            })
             .ConfigureFonts(fonts =>
             {
                 fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
@@ -38,16 +55,21 @@ public static class MauiProgram
         builder.Services.AddSingleton<SentimentCalculator>();
         builder.Services.AddSingleton<IFearGreedService, LocalFearGreedService>();
         builder.Services.AddSingleton<WalletService>();
+        builder.Services.AddSingleton<INewsService, NewsService>();
 
         // ViewModels
         builder.Services.AddSingleton<HomeViewModel>();
+        builder.Services.AddSingleton<NewsViewModel>();
         builder.Services.AddSingleton<ChartViewModel>();
         builder.Services.AddSingleton<WatchViewModel>();
+        builder.Services.AddSingleton<SettingsViewModel>();
 
         // Pages
         builder.Services.AddSingleton<HomePage>();
+        builder.Services.AddSingleton<NewsPage>();
         builder.Services.AddSingleton<ChartPage>();
         builder.Services.AddSingleton<WatchPage>();
+        builder.Services.AddSingleton<SettingsPage>();
 
 #if DEBUG
         builder.Logging.AddDebug();

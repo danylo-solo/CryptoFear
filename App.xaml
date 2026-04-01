@@ -17,6 +17,7 @@
             <converters:FearGreedToClassificationConverter x:Key="FearGreedToClassificationConverter"/>
             <converters:IntentionToColorConverter x:Key="IntentionToColorConverter"/>
             <converters:BalanceFormatConverter x:Key="BalanceFormatConverter"/>
+            <converters:DateToTimeAgoConverter x:Key="DateToTimeAgoConverter"/>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

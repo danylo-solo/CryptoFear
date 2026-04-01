@@ -10,7 +10,6 @@ public class FearGreedGauge : ContentView
     private readonly SKCanvasView _canvasView;
     private float _animatedValue;
     private float _targetValue;
-    private bool _isAnimating;
 
     public static readonly BindableProperty ValueProperty =
         BindableProperty.Create(nameof(Value), typeof(double), typeof(FearGreedGauge), 0d,
@@ -36,7 +35,8 @@ public class FearGreedGauge : ContentView
         _canvasView = new SKCanvasView();
         _canvasView.PaintSurface += OnPaintSurface;
         Content = _canvasView;
-        HeightRequest = 260;
+        HeightRequest = 220;
+        ThemeService.ThemeChanged += () => _canvasView.InvalidateSurface();
     }
 
     private static void OnValueChanged(BindableObject bindable, object oldValue, object newValue)
@@ -44,25 +44,29 @@ public class FearGreedGauge : ContentView
         if (bindable is FearGreedGauge gauge)
         {
             gauge._targetValue = Convert.ToSingle(newValue);
-            gauge.AnimateNeedle();
+            gauge.AnimateIndicator();
         }
     }
 
-    private void AnimateNeedle()
+    private void AnimateIndicator()
     {
-        if (_isAnimating) return;
-        _isAnimating = true;
+        this.AbortAnimation("IndicatorAnimation");
 
         var startValue = _animatedValue;
+        var clampedTarget = Math.Clamp(_targetValue, 0f, 100f);
+        var delta = Math.Abs(clampedTarget - startValue);
+        uint duration = (uint)Math.Clamp(380 + (delta * 8), 380, 950);
+
         var animation = new Animation(v =>
         {
             _animatedValue = (float)v;
             _canvasView.InvalidateSurface();
-        }, startValue, _targetValue, Easing.CubicOut);
+        }, startValue, clampedTarget, Easing.SinOut);
 
-        animation.Commit(this, "NeedleAnimation", 16, 900, finished: (_, _) =>
+        animation.Commit(this, "IndicatorAnimation", 16, duration, finished: (_, _) =>
         {
-            _isAnimating = false;
+            _animatedValue = clampedTarget;
+            _canvasView.InvalidateSurface();
         });
     }
 
@@ -75,54 +79,36 @@ public class FearGreedGauge : ContentView
         float width = info.Width;
         float height = info.Height;
         float centerX = width / 2f;
-        float centerY = height * 0.62f;
+        float centerY = height * 0.54f;
 
-        // make sure it fits on screen
-        float horizontalPadding = width * 0.09f;
-        float maxRadiusByWidth = (width - horizontalPadding * 2f) / 2f;
-        float maxRadiusByHeight = MathF.Min(centerY - 8f, height * 0.45f);
-        float arcRadius = MathF.Min(maxRadiusByWidth, maxRadiusByHeight);
+        float horizontalPadding = width * 0.12f;
+        float maxRadius = (width - horizontalPadding * 2f) / 2f;
+        float arcRadius = MathF.Min(maxRadius, height * 0.44f);
 
         DrawArc(canvas, centerX, centerY, arcRadius);
-        DrawTickMarks(canvas, centerX, centerY, arcRadius);
-        DrawNeedle(canvas, centerX, centerY, arcRadius);
-        DrawCenterDot(canvas, centerX, centerY);
-        DrawValueText(canvas, centerX, centerY, width);
+        DrawIndicatorDot(canvas, centerX, centerY, arcRadius);
+        DrawValueText(canvas, centerX, centerY, arcRadius, width);
     }
+
+    private static readonly SKColor[] SegmentColors =
+    {
+        new(0xF8, 0x71, 0x71),
+        new(0xFB, 0x92, 0x3C),
+        new(0xFB, 0xBF, 0x24),
+        new(0x4A, 0xDE, 0x80),
+        new(0x22, 0xC5, 0x5E),
+    };
 
     private void DrawArc(SKCanvas canvas, float cx, float cy, float radius)
     {
-        float arcWidth = MathF.Max(14f, radius * 0.1f);
+        float arcWidth = MathF.Max(10f, radius * 0.07f);
         var rect = new SKRect(cx - radius, cy - radius, cx + radius, cy + radius);
 
-        var segmentColors = new[]
-        {
-            new SKColor(0xF8, 0x71, 0x71), // Extreme Fear
-            new SKColor(0xFB, 0x92, 0x3C), // Fear
-            new SKColor(0xFB, 0xBF, 0x24), // Neutral
-            new SKColor(0x4A, 0xDE, 0x80), // Greed
-            new SKColor(0x22, 0xC5, 0x5E), // Extreme Greed
-        };
-
-        // background track
-        using (var baseTrackPaint = new SKPaint
-        {
-            IsAntialias = true,
-            Style = SKPaintStyle.Stroke,
-            StrokeWidth = arcWidth,
-            StrokeCap = SKStrokeCap.Round,
-            Color = new SKColor(0xE8, 0xE6, 0xF0, 28)
-        })
-        {
-            canvas.DrawArc(rect, 180, 180, false, baseTrackPaint);
-        }
-
         float totalSweep = 180f;
-        float segmentAngle = totalSweep / segmentColors.Length;
-        float startAngle = 180f;
-        float gap = 2.2f;
+        float segmentAngle = totalSweep / SegmentColors.Length;
+        float gap = 2.5f;
 
-        for (int i = 0; i < segmentColors.Length; i++)
+        for (int i = 0; i < SegmentColors.Length; i++)
         {
             using var paint = new SKPaint
             {
@@ -130,156 +116,83 @@ public class FearGreedGauge : ContentView
                 Style = SKPaintStyle.Stroke,
                 StrokeWidth = arcWidth,
                 StrokeCap = SKStrokeCap.Round,
-                Color = segmentColors[i]
+                Color = SegmentColors[i]
             };
 
-            float actualStart = startAngle + (i * segmentAngle) + (i > 0 ? gap / 2f : 0);
-            float actualSweep = segmentAngle - (i > 0 && i < segmentColors.Length - 1 ? gap : gap / 2f);
+            float actualStart = 180f + (i * segmentAngle) + (i > 0 ? gap / 2f : 0);
+            float actualSweep = segmentAngle - (i > 0 && i < SegmentColors.Length - 1 ? gap : gap / 2f);
 
             canvas.DrawArc(rect, actualStart, actualSweep, false, paint);
         }
     }
 
-    private void DrawTickMarks(SKCanvas canvas, float cx, float cy, float radius)
-    {
-        for (int i = 0; i <= 10; i++)
-        {
-            bool isMajor = i % 5 == 0;
-            float angle = 180f + (i * 18f);
-            float radians = angle * MathF.PI / 180f;
-            float innerR = radius + 10;
-            float outerR = radius + (isMajor ? 19 : 14);
-
-            float x1 = cx + innerR * MathF.Cos(radians);
-            float y1 = cy + innerR * MathF.Sin(radians);
-            float x2 = cx + outerR * MathF.Cos(radians);
-            float y2 = cy + outerR * MathF.Sin(radians);
-
-            using var tickPaint = new SKPaint
-            {
-                IsAntialias = true,
-                Style = SKPaintStyle.Stroke,
-                StrokeCap = SKStrokeCap.Round,
-                StrokeWidth = isMajor ? 1.8f : 1.2f,
-                Color = new SKColor(0xE8, 0xE6, 0xF0, isMajor ? (byte)72 : (byte)44)
-            };
-
-            canvas.DrawLine(x1, y1, x2, y2, tickPaint);
-        }
-    }
-
-    private void DrawNeedle(SKCanvas canvas, float cx, float cy, float radius)
+    private void DrawIndicatorDot(SKCanvas canvas, float cx, float cy, float radius)
     {
         float normalizedValue = Math.Clamp(_animatedValue / 100f, 0f, 1f);
-        float needleAngle = 180f + (normalizedValue * 180f);
-        float radians = needleAngle * MathF.PI / 180f;
-        float needleLength = radius * 0.75f;
+        float radians = (180f + normalizedValue * 180f) * MathF.PI / 180f;
 
-        float tipX = cx + needleLength * MathF.Cos(radians);
-        float tipY = cy + needleLength * MathF.Sin(radians);
+        float dotX = cx + radius * MathF.Cos(radians);
+        float dotY = cy + radius * MathF.Sin(radians);
 
-        // Needle body
-        using var needlePaint = new SKPaint
+        var isDark = ThemeService.IsDarkMode;
+
+        using var basePaint = new SKPaint
         {
             IsAntialias = true,
-            Style = SKPaintStyle.Stroke,
-            StrokeWidth = 2.6f,
-            StrokeCap = SKStrokeCap.Round,
-            Color = new SKColor(0xE8, 0xE6, 0xF0)
+            Style = SKPaintStyle.Fill,
+            Color = isDark ? new SKColor(0x08, 0x08, 0x0F) : new SKColor(0xF8, 0xF7, 0xFC)
         };
-        canvas.DrawLine(cx, cy, tipX, tipY, needlePaint);
+        canvas.DrawCircle(dotX, dotY, 13f, basePaint);
 
-        // Tip dot
-        using var tipPaint = new SKPaint
+        using var fillPaint = new SKPaint
+        {
+            IsAntialias = true,
+            Style = SKPaintStyle.Fill,
+            Color = isDark ? new SKColor(0x14, 0x14, 0x2A) : new SKColor(0xFF, 0xFF, 0xFF)
+        };
+        canvas.DrawCircle(dotX, dotY, 10f, fillPaint);
+
+        using var accentPaint = new SKPaint
         {
             IsAntialias = true,
             Style = SKPaintStyle.Fill,
             Color = GetColorForValue(_animatedValue)
         };
-        canvas.DrawCircle(tipX, tipY, 5, tipPaint);
+        canvas.DrawCircle(dotX, dotY, 5.5f, accentPaint);
     }
 
-    private void DrawCenterDot(SKCanvas canvas, float cx, float cy)
-    {
-        using var ringPaint = new SKPaint
-        {
-            IsAntialias = true,
-            Style = SKPaintStyle.Stroke,
-            StrokeWidth = 2,
-            Color = new SKColor(0xE8, 0xE6, 0xF0, 36)
-        };
-        canvas.DrawCircle(cx, cy, 16, ringPaint);
-
-        using var outerPaint = new SKPaint
-        {
-            IsAntialias = true,
-            Style = SKPaintStyle.Fill,
-            Color = new SKColor(0x1C, 0x1C, 0x36)
-        };
-        canvas.DrawCircle(cx, cy, 14, outerPaint);
-
-        using var innerPaint = new SKPaint
-        {
-            IsAntialias = true,
-            Style = SKPaintStyle.Fill,
-            Color = GetColorForValue(_animatedValue)
-        };
-        canvas.DrawCircle(cx, cy, 8, innerPaint);
-    }
-
-    private void DrawValueText(SKCanvas canvas, float cx, float cy, float width)
+    private void DrawValueText(SKCanvas canvas, float cx, float cy, float radius, float width)
     {
         float scaleFactor = Math.Clamp(width / 400f, 0.85f, 1.25f);
 
-        var rounded = Math.Round(_animatedValue, 1, MidpointRounding.AwayFromZero);
-        var absFormatted = Math.Abs(rounded).ToString("0.0", System.Globalization.CultureInfo.InvariantCulture);
-        var parts = absFormatted.Split('.');
-        var wholeText = (rounded < 0 ? "-" : string.Empty) + parts[0];
-        var decimalText = "." + parts[1];
+        var whole = ((int)Math.Round(_animatedValue)).ToString();
 
-        using var wholePaint = new SKPaint
+        using var valuePaint = new SKPaint
         {
             IsAntialias = true,
             Style = SKPaintStyle.Fill,
-            Color = GetColorForValue(_animatedValue),
-            TextSize = 50 * scaleFactor,
-            TextAlign = SKTextAlign.Left,
+            Color = ThemeService.IsDarkMode ? new SKColor(0xE8, 0xE6, 0xF0) : new SKColor(0x1A, 0x1A, 0x2E),
+            TextSize = 54 * scaleFactor,
+            TextAlign = SKTextAlign.Center,
             Typeface = SKTypeface.FromFamilyName("Inter", SKFontStyleWeight.Bold, SKFontStyleWidth.Normal, SKFontStyleSlant.Upright)
                        ?? SKTypeface.Default
         };
 
-        using var decimalPaint = new SKPaint
-        {
-            IsAntialias = true,
-            Style = SKPaintStyle.Fill,
-            Color = GetColorForValue(_animatedValue),
-            TextSize = 30 * scaleFactor,
-            TextAlign = SKTextAlign.Left,
-            Typeface = SKTypeface.FromFamilyName("Inter", SKFontStyleWeight.Bold, SKFontStyleWidth.Normal, SKFontStyleSlant.Upright)
-                       ?? SKTypeface.Default
-        };
+        float baselineY = cy - radius * 0.15f;
+        canvas.DrawText(whole, cx, baselineY, valuePaint);
 
-        var wholeWidth = wholePaint.MeasureText(wholeText);
-        var decimalWidth = decimalPaint.MeasureText(decimalText);
-        var startX = cx - ((wholeWidth + decimalWidth) / 2f);
-        var baselineY = cy + 52 * scaleFactor;
-
-        canvas.DrawText(wholeText, startX, baselineY, wholePaint);
-        canvas.DrawText(decimalText, startX + wholeWidth, baselineY, decimalPaint);
-
-        // Classification label
         string classification = GetClassification(_animatedValue);
         using var labelPaint = new SKPaint
         {
             IsAntialias = true,
             Style = SKPaintStyle.Fill,
-            Color = new SKColor(0x7A, 0x78, 0x90),
+            Color = GetColorForValue(_animatedValue).WithAlpha(200),
             TextSize = 15 * scaleFactor,
             TextAlign = SKTextAlign.Center,
             Typeface = SKTypeface.FromFamilyName("Inter", SKFontStyleWeight.Medium, SKFontStyleWidth.Normal, SKFontStyleSlant.Upright)
                        ?? SKTypeface.Default
         };
-        canvas.DrawText(classification, cx, cy + 80 * scaleFactor, labelPaint);
+        canvas.DrawText(classification, cx, baselineY + 24 * scaleFactor, labelPaint);
     }
 
     private static SKColor GetColorForValue(float value)

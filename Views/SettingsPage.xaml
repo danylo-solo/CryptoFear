@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:viewmodels="clr-namespace:CryptoFear.ViewModels"
+             xmlns:services="clr-namespace:CryptoFear.Services"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             x:Class="CryptoFear.Views.SettingsPage"
+             x:DataType="viewmodels:SettingsViewModel"
+             Title="{Binding Title}"
+             Shell.NavBarIsVisible="False"
+             BackgroundColor="{DynamicResource Background}">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="20,24" Spacing="24">
+
+            <!-- Header -->
+            <VerticalStackLayout Spacing="8">
+                <Label Text="Settings"
+                       Style="{StaticResource DisplayLarge}"/>
+                <Label Text="Customize your experience"
+                       Style="{StaticResource BodyLarge}"
+                       TextColor="{DynamicResource TextSecondary}"/>
+            </VerticalStackLayout>
+
+            <!-- Appearance Section -->
+            <VerticalStackLayout Spacing="16">
+                <Label Text="Appearance"
+                       Style="{StaticResource SectionHeader}"/>
+
+                <Border Style="{StaticResource ModernCard}">
+                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="16">
+                        <Border BackgroundColor="{DynamicResource PrimaryContainer}"
+                                StrokeThickness="0"
+                                StrokeShape="RoundRectangle 12"
+                                WidthRequest="44"
+                                HeightRequest="44"
+                                VerticalOptions="Center">
+                            <Label Text="&#x25D1;"
+                                   FontSize="22"
+                                   TextColor="{DynamicResource Primary}"
+                                   HorizontalOptions="Center"
+                                   VerticalOptions="Center"/>
+                        </Border>
+
+                        <Label Grid.Column="1"
+                               Text="Dark Mode"
+                               Style="{StaticResource CardTitle}"
+                               VerticalOptions="Center"/>
+
+                        <Switch Grid.Column="2"
+                                IsToggled="{Binding IsDarkMode}"
+                                HorizontalOptions="End"
+                                VerticalOptions="Center"/>
+                    </Grid>
+                </Border>
+            </VerticalStackLayout>
+
+            <!-- Currency Section -->
+            <VerticalStackLayout Spacing="16">
+                <Label Text="Currency"
+                       Style="{StaticResource SectionHeader}"/>
+
+                <Border Style="{StaticResource ModernCard}">
+                    <VerticalStackLayout Spacing="0">
+
+                        <!-- Selected currency tap target -->
+                        <Border StrokeThickness="0"
+                                BackgroundColor="Transparent"
+                                Padding="0">
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding ToggleCurrencyDropdownCommand}"/>
+                            </Border.GestureRecognizers>
+                            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="16">
+                                <Border BackgroundColor="{DynamicResource PrimaryContainer}"
+                                        StrokeThickness="0"
+                                        StrokeShape="RoundRectangle 12"
+                                        WidthRequest="44"
+                                        HeightRequest="44"
+                                        VerticalOptions="Center">
+                                    <Label Text="$"
+                                           FontSize="22"
+                                           FontAttributes="Bold"
+                                           TextColor="{DynamicResource Primary}"
+                                           HorizontalOptions="Center"
+                                           VerticalOptions="Center"/>
+                                </Border>
+
+                                <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
+                                    <Label Text="Default Currency"
+                                           Style="{StaticResource CardTitle}"/>
+                                    <Label Text="{Binding SelectedCurrencyDisplay}"
+                                           FontSize="13"
+                                           TextColor="{DynamicResource TextSecondary}"/>
+                                </VerticalStackLayout>
+
+                                <Label Grid.Column="2"
+                                       Text="›"
+                                       FontSize="22"
+                                       TextColor="{DynamicResource TextMuted}"
+                                       VerticalOptions="Center">
+                                    <Label.Triggers>
+                                        <DataTrigger TargetType="Label"
+                                                     Binding="{Binding IsCurrencyDropdownOpen}"
+                                                     Value="True">
+                                            <Setter Property="Rotation" Value="90"/>
+                                        </DataTrigger>
+                                    </Label.Triggers>
+                                </Label>
+                            </Grid>
+                        </Border>
+
+                        <!-- Dropdown list -->
+                        <VerticalStackLayout IsVisible="{Binding IsCurrencyDropdownOpen}"
+                                             Margin="0,16,0,0"
+                                             Spacing="0">
+                            <BoxView HeightRequest="1"
+                                     Color="{DynamicResource Border}"
+                                     Margin="0,0,0,8"/>
+
+                            <VerticalStackLayout BindableLayout.ItemsSource="{Binding Currencies}"
+                                                 Spacing="0">
+                                <BindableLayout.ItemTemplate>
+                                    <DataTemplate x:DataType="services:CurrencyOption">
+                                        <Border StrokeThickness="0"
+                                                BackgroundColor="Transparent"
+                                                Padding="12,12">
+                                            <Border.GestureRecognizers>
+                                                <TapGestureRecognizer Tapped="OnCurrencyOptionTapped"/>
+                                            </Border.GestureRecognizers>
+                                            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="14">
+                                                <Label Text="{Binding Symbol}"
+                                                       FontSize="18"
+                                                       FontFamily="InterBold"
+                                                       TextColor="{DynamicResource TextPrimary}"
+                                                       WidthRequest="32"
+                                                       HorizontalTextAlignment="Center"
+                                                       VerticalOptions="Center"/>
+                                                <VerticalStackLayout Grid.Column="1" Spacing="1" VerticalOptions="Center">
+                                                    <Label Text="{Binding Code}"
+                                                           FontSize="15"
+                                                           FontAttributes="Bold"
+                                                           TextColor="{DynamicResource TextPrimary}"/>
+                                                    <Label Text="{Binding Name}"
+                                                           FontSize="12"
+                                                           TextColor="{DynamicResource TextSecondary}"/>
+                                                </VerticalStackLayout>
+                                                <Label Grid.Column="2"
+                                                       Text="✓"
+                                                       FontSize="16"
+                                                       FontAttributes="Bold"
+                                                       TextColor="{DynamicResource Primary}"
+                                                       VerticalOptions="Center"
+                                                       IsVisible="False"/>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </BindableLayout.ItemTemplate>
+                            </VerticalStackLayout>
+                        </VerticalStackLayout>
+
+                    </VerticalStackLayout>
+                </Border>
+            </VerticalStackLayout>
+
+            <!-- Developer Section -->
+            <VerticalStackLayout Spacing="16">
+                <Label Text="Developer"
+                       Style="{StaticResource SectionHeader}"/>
+
+                <Border Style="{StaticResource ModernCard}">
+                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="16">
+                        <Border BackgroundColor="{DynamicResource PrimaryContainer}"
+                                StrokeThickness="0"
+                                StrokeShape="RoundRectangle 12"
+                                WidthRequest="44"
+                                HeightRequest="44"
+                                VerticalOptions="Center">
+                            <Image Source="settings.png"
+                                   WidthRequest="22"
+                                   HeightRequest="22"
+                                   HorizontalOptions="Center"
+                                   VerticalOptions="Center">
+                                <Image.Behaviors>
+                                    <toolkit:IconTintColorBehavior TintColor="{DynamicResource Primary}"/>
+                                </Image.Behaviors>
+                            </Image>
+                        </Border>
+
+                        <Label Grid.Column="1"
+                               Text="Debug Logging"
+                               Style="{StaticResource CardTitle}"
+                               VerticalOptions="Center"/>
+
+                        <Switch Grid.Column="2"
+                                IsToggled="{Binding IsDebugLogging}"
+                                HorizontalOptions="End"
+                                VerticalOptions="Center"/>
+                    </Grid>
+                </Border>
+            </VerticalStackLayout>
+
+            <!-- About Section -->
+            <VerticalStackLayout Spacing="16">
+                <Label Text="About"
+                       Style="{StaticResource SectionHeader}"/>
+
+                <Border Style="{StaticResource ModernCard}">
+                    <VerticalStackLayout Spacing="8">
+                        <Label Text="CryptoFear"
+                               Style="{StaticResource CardTitle}"/>
+                        <Label Text="Track crypto market sentiment with the Fear &amp; Greed Index."
+                               Style="{StaticResource BodyMedium}"
+                               TextColor="{DynamicResource TextSecondary}"/>
+                    </VerticalStackLayout>
+                </Border>
+            </VerticalStackLayout>
+
+            <BoxView HeightRequest="20" Color="Transparent"/>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

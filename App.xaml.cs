@@ -9,6 +9,8 @@ public partial class App : Application
     {
         InitializeComponent();
         EnvConfig.Load();
+        ThemeService.Initialize();
+        CurrencyService.Initialize();
     }
 
     protected override Window CreateWindow(IActivationState? activationState)

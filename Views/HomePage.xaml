@@ -8,46 +8,36 @@
              x:DataType="viewmodels:HomeViewModel"
              Title="{Binding Title}"
              Shell.NavBarIsVisible="False"
-             BackgroundColor="{StaticResource Background}">
+             BackgroundColor="{DynamicResource Background}">
 
     <Grid RowDefinitions="*">
     <ScrollView Grid.Row="0">
         <VerticalStackLayout Spacing="0">
 
             <!-- Hero Section with Gauge -->
-            <Border BackgroundColor="{StaticResource Background}"
+            <Border BackgroundColor="{DynamicResource Background}"
                     StrokeThickness="0"
                     StrokeShape="RoundRectangle 0,0,24,24"
-                    Padding="24,48,24,28"
-                    Margin="0,0,0,0">
-                <VerticalStackLayout Spacing="8">
-                    <!-- Header -->
+                    Padding="24,40,24,0"
+                    Margin="0,0,0,-12">
+                <VerticalStackLayout Spacing="4">
                     <HorizontalStackLayout Spacing="8" HorizontalOptions="Center">
                         <Label Text="CryptoFear"
                                Style="{StaticResource DisplayLarge}"
-                               TextColor="{StaticResource PrimaryLight}"
+                               TextColor="{DynamicResource PrimaryLight}"
                                HorizontalOptions="Center"/>
                     </HorizontalStackLayout>
 
-                    <Label Text="Market Sentiment Tracker"
-                           FontSize="14"
-                           FontFamily="InterRegular"
-                           TextColor="{StaticResource TextSecondary}"
-                           HorizontalOptions="Center"
-                           Margin="0,0,0,8"/>
-
-                    <!-- Fear & Greed Gauge -->
                     <controls:FearGreedGauge x:Name="GaugeControl"
                                             Value="{Binding CurrentIndex}"
                                             Classification="{Binding CurrentClassification}"
-                                            HeightRequest="260"
+                                            HeightRequest="220"
                                             HorizontalOptions="Fill"/>
-
                 </VerticalStackLayout>
             </Border>
 
             <!-- Main Content -->
-            <VerticalStackLayout Padding="20,24" Spacing="24">
+            <VerticalStackLayout Padding="20,10,20,24" Spacing="24">
 
                 <!-- Index Change Card with Timeframe Chips -->
                 <Border Style="{StaticResource ModernCard}"
@@ -74,7 +64,7 @@
                             <Label Text="pts"
                                    FontSize="16"
                                    FontFamily="InterRegular"
-                                   TextColor="{StaticResource TextSecondary}"
+                                   TextColor="{DynamicResource TextSecondary}"
                                    VerticalOptions="End"
                                    Margin="0,0,0,6"/>
                         </HorizontalStackLayout>
@@ -103,6 +93,47 @@
                                     x:Name="Chip30D"/>
                         </HorizontalStackLayout>
                     </VerticalStackLayout>
+                </Border>
+
+                <!-- Recent News Banner -->
+                <Border Style="{StaticResource InteractiveCard}"
+                        x:Name="NewsBanner">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnNewsTapped"/>
+                    </Border.GestureRecognizers>
+                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="14">
+                        <Border BackgroundColor="{DynamicResource PrimaryContainer}"
+                                StrokeThickness="0"
+                                StrokeShape="RoundRectangle 12"
+                                WidthRequest="44"
+                                HeightRequest="44"
+                                VerticalOptions="Center"
+                                Grid.Column="0">
+                            <Image Source="news.png"
+                                   WidthRequest="22"
+                                   HeightRequest="22"
+                                   HorizontalOptions="Center"
+                                   VerticalOptions="Center"/>
+                        </Border>
+                        <VerticalStackLayout Grid.Column="1" Spacing="3" VerticalOptions="Center"
+                                             x:Name="HeadlineContent">
+                            <Label Text="{Binding CurrentHeadlineTitle}"
+                                   FontSize="14"
+                                   FontFamily="InterSemiBold"
+                                   TextColor="{DynamicResource TextPrimary}"
+                                   LineBreakMode="TailTruncation"
+                                   MaxLines="2"/>
+                            <Label Text="{Binding CurrentHeadlineSource}"
+                                   FontSize="12"
+                                   FontFamily="InterRegular"
+                                   TextColor="{DynamicResource TextSecondary}"/>
+                        </VerticalStackLayout>
+                        <Label Text="→"
+                               FontSize="20"
+                               TextColor="{DynamicResource PrimaryLight}"
+                               VerticalOptions="Center"
+                               Grid.Column="2"/>
+                    </Grid>
                 </Border>
 
                 <!-- Market Stats Row -->
@@ -203,7 +234,7 @@
                                 Padding="12,14"
                                 x:Name="YearlyHighCard">
                             <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
-                                <Border BackgroundColor="{StaticResource GreedExtreme}"
+                                <Border BackgroundColor="{DynamicResource GreedExtreme}"
                                         StrokeThickness="0"
                                         StrokeShape="RoundRectangle 8"
                                         WidthRequest="40" HeightRequest="40"
@@ -227,10 +258,10 @@
                                     <Label Text="Yearly High"
                                            FontSize="12"
                                            FontAttributes="Bold"
-                                           TextColor="{StaticResource TextPrimary}"/>
+                                           TextColor="{DynamicResource TextPrimary}"/>
                                     <Label Text="{Binding YearlyHighDate}"
                                            FontSize="11"
-                                           TextColor="{StaticResource TextMuted}"/>
+                                           TextColor="{DynamicResource TextMuted}"/>
                                 </VerticalStackLayout>
                             </Grid>
                         </Border>
@@ -239,7 +270,7 @@
                                 Padding="12,14"
                                 x:Name="YearlyLowCard">
                             <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
-                                <Border BackgroundColor="{StaticResource FearExtreme}"
+                                <Border BackgroundColor="{DynamicResource FearExtreme}"
                                         StrokeThickness="0"
                                         StrokeShape="RoundRectangle 8"
                                         WidthRequest="40" HeightRequest="40"
@@ -263,10 +294,10 @@
                                     <Label Text="Yearly Low"
                                            FontSize="12"
                                            FontAttributes="Bold"
-                                           TextColor="{StaticResource TextPrimary}"/>
+                                           TextColor="{DynamicResource TextPrimary}"/>
                                     <Label Text="{Binding YearlyLowDate}"
                                            FontSize="11"
-                                           TextColor="{StaticResource TextMuted}"/>
+                                           TextColor="{DynamicResource TextMuted}"/>
                                 </VerticalStackLayout>
                             </Grid>
                         </Border>
@@ -276,23 +307,31 @@
                 <!-- Expandable explanation cards -->
                 <Border Style="{StaticResource ModernCard}"
                         x:Name="InfoCard">
-                    <toolkit:Expander IsExpanded="False">
+                    <toolkit:Expander x:Name="Expander1" IsExpanded="False">
                         <toolkit:Expander.Header>
                             <Grid ColumnDefinitions="*,Auto">
                                 <Label Text="What does this mean?"
                                        Style="{StaticResource TitleMedium}"
                                        VerticalOptions="Center"/>
                                 <Label Grid.Column="1"
-                                       Text="▼"
+                                       Text="›"
                                        FontSize="14"
-                                       TextColor="{StaticResource TextMuted}"
-                                       VerticalOptions="Center"/>
+                                       TextColor="{DynamicResource TextMuted}"
+                                       VerticalOptions="Center">
+                                    <Label.Triggers>
+                                        <DataTrigger TargetType="Label"
+                                                     Binding="{Binding IsExpanded, Source={x:Reference Expander1}}"
+                                                     Value="True">
+                                            <Setter Property="Rotation" Value="90"/>
+                                        </DataTrigger>
+                                    </Label.Triggers>
+                                </Label>
                             </Grid>
                         </toolkit:Expander.Header>
                         <VerticalStackLayout Spacing="12" Margin="0,12,0,0">
                             <Label FontSize="14"
                                    FontFamily="InterRegular"
-                                   TextColor="{StaticResource TextSecondary}"
+                                   TextColor="{DynamicResource TextSecondary}"
                                    LineBreakMode="WordWrap"
                                    LineHeight="1.5">
                                 <Label.Text>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.</Label.Text>
@@ -300,7 +339,7 @@
 
                             <Label FontSize="13"
                                    FontFamily="InterRegular"
-                                   TextColor="{StaticResource TextMuted}"
+                                   TextColor="{DynamicResource TextMuted}"
                                    LineBreakMode="WordWrap"
                                    LineHeight="1.5">
                                 <Label.Text>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident.</Label.Text>
@@ -310,39 +349,47 @@
                 </Border>
 
                 <Border Style="{StaticResource ModernCard}">
-                    <toolkit:Expander IsExpanded="False">
+                    <toolkit:Expander x:Name="Expander2" IsExpanded="False">
                         <toolkit:Expander.Header>
                             <Grid ColumnDefinitions="*,Auto">
                                 <Label Text="How are scores calculated?"
                                        Style="{StaticResource TitleMedium}"
                                        VerticalOptions="Center"/>
                                 <Label Grid.Column="1"
-                                       Text="▼"
+                                       Text="›"
                                        FontSize="14"
-                                       TextColor="{StaticResource TextMuted}"
-                                       VerticalOptions="Center"/>
+                                       TextColor="{DynamicResource TextMuted}"
+                                       VerticalOptions="Center">
+                                    <Label.Triggers>
+                                        <DataTrigger TargetType="Label"
+                                                     Binding="{Binding IsExpanded, Source={x:Reference Expander2}}"
+                                                     Value="True">
+                                            <Setter Property="Rotation" Value="90"/>
+                                        </DataTrigger>
+                                    </Label.Triggers>
+                                </Label>
                             </Grid>
                         </toolkit:Expander.Header>
                         <VerticalStackLayout Spacing="10" Margin="0,12,0,0">
                             <Label Text="Lorem ipsum dolor sit amet, consectetur adipiscing elit:"
                                    FontSize="14"
                                    FontFamily="InterRegular"
-                                   TextColor="{StaticResource TextSecondary}"/>
+                                   TextColor="{DynamicResource TextSecondary}"/>
                             <Label Text="• Lorem ipsum dolor sit amet, consectetur adipiscing elit."
                                    FontSize="13"
-                                   TextColor="{StaticResource TextSecondary}"/>
+                                   TextColor="{DynamicResource TextSecondary}"/>
                             <Label Text="• Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
                                    FontSize="13"
-                                   TextColor="{StaticResource TextSecondary}"/>
+                                   TextColor="{DynamicResource TextSecondary}"/>
                             <Label Text="• Ut enim ad minim veniam, quis nostrud exercitation ullamco."
                                    FontSize="13"
-                                   TextColor="{StaticResource TextSecondary}"/>
+                                   TextColor="{DynamicResource TextSecondary}"/>
                             <Label Text="• Duis aute irure dolor in reprehenderit in voluptate velit esse."
                                    FontSize="13"
-                                   TextColor="{StaticResource TextSecondary}"/>
+                                   TextColor="{DynamicResource TextSecondary}"/>
                             <Label Text="Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
                                    FontSize="12"
-                                   TextColor="{StaticResource TextMuted}"
+                                   TextColor="{DynamicResource TextMuted}"
                                    LineBreakMode="WordWrap"/>
                         </VerticalStackLayout>
                     </toolkit:Expander>
@@ -361,7 +408,7 @@
                                 <TapGestureRecognizer Tapped="OnLogEntryTapped"/>
                             </Border.GestureRecognizers>
                             <VerticalStackLayout Spacing="14" HorizontalOptions="Center">
-                                <Border BackgroundColor="{StaticResource PrimaryContainer}"
+                                <Border BackgroundColor="{DynamicResource PrimaryContainer}"
                                         StrokeThickness="0"
                                         StrokeShape="RoundRectangle 14"
                                         WidthRequest="52"
@@ -369,18 +416,18 @@
                                         HorizontalOptions="Center">
                                     <Label Text="+"
                                            FontSize="28"
-                                           TextColor="{StaticResource Primary}"
+                                           TextColor="{DynamicResource Primary}"
                                            HorizontalOptions="Center"
                                            VerticalOptions="Center"/>
                                 </Border>
                                 <Label Text="Log Entry"
                                        FontSize="15"
                                        FontAttributes="Bold"
-                                       TextColor="{StaticResource TextPrimary}"
+                                       TextColor="{DynamicResource TextPrimary}"
                                        HorizontalOptions="Center"/>
                                 <Label Text="Record your position"
                                        FontSize="13"
-                                       TextColor="{StaticResource TextSecondary}"
+                                       TextColor="{DynamicResource TextSecondary}"
                                        HorizontalOptions="Center"
                                        HorizontalTextAlignment="Center"/>
                             </VerticalStackLayout>
@@ -393,7 +440,7 @@
                                 <TapGestureRecognizer Tapped="OnWatchWalletTapped"/>
                             </Border.GestureRecognizers>
                             <VerticalStackLayout Spacing="14" HorizontalOptions="Center">
-                                <Border BackgroundColor="{StaticResource PrimaryContainer}"
+                                <Border BackgroundColor="{DynamicResource PrimaryContainer}"
                                         StrokeThickness="0"
                                         StrokeShape="RoundRectangle 14"
                                         WidthRequest="52"
@@ -408,11 +455,11 @@
                                 <Label Text="Watch Wallet"
                                        FontSize="15"
                                        FontAttributes="Bold"
-                                       TextColor="{StaticResource TextPrimary}"
+                                       TextColor="{DynamicResource TextPrimary}"
                                        HorizontalOptions="Center"/>
                                 <Label Text="Track a wallet address"
                                        FontSize="13"
-                                       TextColor="{StaticResource TextSecondary}"
+                                       TextColor="{DynamicResource TextSecondary}"
                                        HorizontalOptions="Center"
                                        HorizontalTextAlignment="Center"/>
                             </VerticalStackLayout>
@@ -424,7 +471,7 @@
                 <ActivityIndicator IsRunning="{Binding IsBusy}"
                                    IsVisible="{Binding IsBusy}"
                                    HorizontalOptions="Center"
-                                   Color="{StaticResource Primary}"/>
+                                   Color="{DynamicResource Primary}"/>
 
                 <BoxView HeightRequest="20" Color="Transparent"/>
 
