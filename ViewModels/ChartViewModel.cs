@@ -4,6 +4,7 @@ using CryptoFear.Models;
 using CryptoFear.Services;
 using LiveChartsCore;
 using LiveChartsCore.Defaults;
+using LiveChartsCore.Kernel;
 using LiveChartsCore.Measure;
 using LiveChartsCore.SkiaSharpView;
 using LiveChartsCore.SkiaSharpView.Painting;
@@ -16,6 +17,7 @@ public partial class ChartViewModel : BaseViewModel
 {
     private readonly IFearGreedService _fearGreedService;
     private readonly IDataService _dataService;
+    private List<FearGreedEntry> _cachedHistorical = new();
 
     [ObservableProperty]
     private ISeries[] series = Array.Empty<ISeries>();
@@ -121,6 +123,7 @@ public partial class ChartViewModel : BaseViewModel
             await Task.WhenAll(historicalTask, entriesTask);
 
             var historical = await historicalTask;
+            _cachedHistorical = historical;
             AllEntries = await entriesTask;
 
             DeriveStats(historical);
@@ -161,16 +164,17 @@ public partial class ChartViewModel : BaseViewModel
 
         var seriesList = new List<ISeries>();
 
-        // figure out x bounds from data
+        // X bounds are always driven by the historical data range — never by entries
         var minDate = ordered.First().Timestamp;
         var maxDate = ordered.Last().Timestamp;
-        if (entries.Count > 0)
-        {
-            var entryMin = entries.Min(e => e.EntryDate);
-            var entryMax = entries.Max(e => e.EntryDate);
-            if (entryMin < minDate) minDate = entryMin;
-            if (entryMax > maxDate) maxDate = entryMax;
-        }
+
+        // Only render markers that fall within the currently displayed date range
+        var rangeStart = minDate.Date;
+        var rangeEnd = maxDate.Date;
+        var visibleEntries = entries
+            .Where(e => e.EntryDate.Date >= rangeStart && e.EntryDate.Date <= rangeEnd)
+            .ToList();
+
         var rangeTicks = (maxDate - minDate).Ticks;
         if (rangeTicks <= 0) rangeTicks = TimeSpan.FromDays(1).Ticks;
         var paddingTicks = (long)(rangeTicks * 0.02);
@@ -192,16 +196,40 @@ public partial class ChartViewModel : BaseViewModel
             LineSmoothness = 0.4
         });
 
-        // user entries as dots
-        if (entries.Count > 0)
-        {
-            var entryPoints = entries
-                .Select(e => new DateTimePoint(e.EntryDate, e.FearGreedValue))
-                .ToList();
+        // Build a date → value lookup from historical data so dots snap to the line
+        var historicalLookup = ordered.ToDictionary(h => h.Timestamp.Date, h => h.Value);
 
-            seriesList.Add(new ScatterSeries<DateTimePoint>
+        // Resolve the historical Y-value for any entry date
+        double ResolveY(DateTime date)
+        {
+            var utcDate = new DateTime(date.Year, date.Month, date.Day, 0, 0, 0, DateTimeKind.Utc);
+            if (historicalLookup.TryGetValue(utcDate.Date, out var v)) return v;
+            return ordered.MinBy(h => Math.Abs((h.Timestamp.Date - utcDate.Date).TotalDays))?.Value ?? 0;
+        }
+
+        // user entries as dots — only those within the active date range
+        var entryHistoricalValues = visibleEntries.Select(e => ResolveY(e.EntryDate)).ToList();
+        if (visibleEntries.Count > 0)
+        {
+            seriesList.Add(new ScatterSeries<UserEntry>
             {
-                Values = entryPoints,
+                Values = visibleEntries,
+                // Coordinate(x, y) — x = SecondaryValue (date ticks), y = PrimaryValue (F&G value)
+                Mapping = (e, index) =>
+                {
+                    var utcDate = new DateTime(e.EntryDate.Year, e.EntryDate.Month, e.EntryDate.Day, 0, 0, 0, DateTimeKind.Utc);
+                    return new Coordinate(utcDate.Ticks, ResolveY(e.EntryDate));
+                },
+                XToolTipLabelFormatter = point =>
+                    new DateTime((long)point.SecondaryValue, DateTimeKind.Utc).ToString("MMM d, yyyy"),
+                YToolTipLabelFormatter = point =>
+                {
+                    var entry = point.Context.DataSource as UserEntry;
+                    var fgValue = (int)Math.Round(point.PrimaryValue);
+                    var sentiment = SentimentClassifier.Classify(point.PrimaryValue);
+                    if (entry is null) return $"F&G: {fgValue} ({sentiment})";
+                    return $"{entry.Intention}  ·  ${entry.Balance:N2}  ·  F&G: {fgValue} ({sentiment})";
+                },
                 GeometrySize = 10,
                 Stroke = new SolidColorPaint(new SKColor((byte)primaryR, (byte)primaryG, (byte)primaryB), 1.5f),
                 Fill = new SolidColorPaint(new SKColor((byte)primaryR, (byte)primaryG, (byte)primaryB, 200))
@@ -210,10 +238,9 @@ public partial class ChartViewModel : BaseViewModel
 
         Series = seriesList.ToArray();
 
-        // y axis padding
+        // y axis padding — use corrected historical values for entries
         var dataValues = ordered.Select(h => h.Value).ToList();
-        if (entries.Count > 0)
-            dataValues.AddRange(entries.Select(e => e.FearGreedValue));
+        dataValues.AddRange(entryHistoricalValues);
         var dataMin = dataValues.Min();
         var dataMax = dataValues.Max();
         var yRange = dataMax - dataMin;
@@ -264,14 +291,28 @@ public partial class ChartViewModel : BaseViewModel
         {
             IsBusy = true;
 
-            var latest = await _fearGreedService.GetLatestAsync();
+            // Normalize to UTC midnight to align with historical data timestamps
+            var entryDateUtc = new DateTime(EntryDate.Year, EntryDate.Month, EntryDate.Day, 0, 0, 0, DateTimeKind.Utc);
+
+            // Look up the Fear & Greed value for the selected date from cached historical data
+            double fearGreedValue = 0;
+            if (_cachedHistorical.Count > 0)
+            {
+                var match = _cachedHistorical.MinBy(h => Math.Abs((h.Timestamp.Date - entryDateUtc.Date).TotalDays));
+                fearGreedValue = match?.Value ?? 0;
+            }
+            else
+            {
+                var latest = await _fearGreedService.GetLatestAsync();
+                fearGreedValue = latest?.Value ?? 0;
+            }
 
             var entry = new UserEntry
             {
                 Balance = balance,
                 Intention = SelectedIntention,
-                EntryDate = EntryDate,
-                FearGreedValue = latest?.Value ?? 0
+                EntryDate = entryDateUtc,
+                FearGreedValue = fearGreedValue
             };
 
             await _dataService.SaveEntryAsync(entry);

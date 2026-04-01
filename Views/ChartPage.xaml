@@ -32,7 +32,8 @@
                                         HeightRequest="400"
                                         HorizontalOptions="Fill"
                                         ZoomMode="X"
-                                        TooltipPosition="Top"
+                                        TooltipPosition="Auto"
+                                        TooltipTextSize="12"
                                         BackgroundColor="Transparent"/>
 
                 <!-- Chart range chips -->
@@ -250,30 +251,31 @@
                                             MinimumHeightRequest="44"/>
                             </Border>
 
+                            <!-- Save Button -->
+                            <Button Command="{Binding SaveEntryCommand}"
+                                    IsEnabled="{Binding IsNotBusy}"
+                                    HeightRequest="50"
+                                    CornerRadius="0"
+                                    FontSize="15"
+                                    FontAttributes="Bold"
+                                    Margin="0,20,0,0"
+                                    x:Name="SaveButton">
+                                <Button.Triggers>
+                                    <DataTrigger TargetType="Button"
+                                                 Binding="{Binding IsBusy}"
+                                                 Value="False">
+                                        <Setter Property="Text" Value="Save Entry"/>
+                                    </DataTrigger>
+                                    <DataTrigger TargetType="Button"
+                                                 Binding="{Binding IsBusy}"
+                                                 Value="True">
+                                        <Setter Property="Text" Value="Saving..."/>
+                                    </DataTrigger>
+                                </Button.Triggers>
+                            </Button>
+
                         </VerticalStackLayout>
                     </Border>
-
-                    <!-- Save Button -->
-                    <Button Command="{Binding SaveEntryCommand}"
-                            IsEnabled="{Binding IsNotBusy}"
-                            HeightRequest="56"
-                            CornerRadius="0"
-                            FontSize="17"
-                            FontAttributes="Bold"
-                            x:Name="SaveButton">
-                        <Button.Triggers>
-                            <DataTrigger TargetType="Button"
-                                         Binding="{Binding IsBusy}"
-                                         Value="False">
-                                <Setter Property="Text" Value="Save Entry"/>
-                            </DataTrigger>
-                            <DataTrigger TargetType="Button"
-                                         Binding="{Binding IsBusy}"
-                                         Value="True">
-                                <Setter Property="Text" Value="Saving..."/>
-                            </DataTrigger>
-                        </Button.Triggers>
-                    </Button>
                 </VerticalStackLayout>
 
                 <!-- Entry Browser -->

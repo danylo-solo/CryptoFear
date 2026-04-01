@@ -1,5 +1,7 @@
 using CryptoFear.Helpers;
 using CryptoFear.ViewModels;
+using LiveChartsCore.SkiaSharpView.Painting;
+using SkiaSharp;
 
 namespace CryptoFear.Views;
 
@@ -12,6 +14,10 @@ public partial class ChartPage : ContentPage
         InitializeComponent();
         BindingContext = viewModel;
         _viewModel = viewModel;
+
+        // Match tooltip colours to the app's dark theme
+        ChartCard.TooltipBackgroundPaint = new SolidColorPaint(new SKColor(0x1C, 0x1C, 0x36, 245));
+        ChartCard.TooltipTextPaint = new SolidColorPaint(new SKColor(0xE8, 0xE6, 0xF0));
     }
 
     protected override async void OnAppearing()
